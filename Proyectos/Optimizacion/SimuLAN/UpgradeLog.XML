@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="SimuLAN">
+</Property><Property Name="Archivo de la solución" Value="C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\SimuLAN.sln">
+</Property><Property Name="Archivo de opciones de usuario" Value="C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\SimuLAN.suo">
+</Property><Property Name="Date" Value="miércoles, 10 de junio de 2009">
+</Property><Property Name="Time" Value="15:58">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="SimuLAN.sln" Description="La copia C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\SimuLAN.sln del archivo se ha realizado correctamente">
+</Event><Event ErrorLevel="0" Project="" Source="SimuLAN.suo" Description="La copia C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\SimuLAN.suo del archivo se ha realizado correctamente">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="SimuLAN.csproj" Description="Se realizó correctamente la copia de seguridad del archivo de proyecto C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\SimuLAN.csproj">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="SimuLAN.csproj.user" Description="La copia de seguridad C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\SimuLAN.csproj.user del archivo se ha creado correctamente">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Aeropuerto.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Aeropuerto.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="avion.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\avion.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="BinaryHeap.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\BinaryHeap.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="DatosItinerario.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\DatosItinerario.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Distribuciones.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Distribuciones.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Form1.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Form1.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Form1.Designer.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Form1.Designer.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="InfoGeneral.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\InfoGeneral.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Parametros.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Parametros.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Parametros.Designer.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Parametros.Designer.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Program.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Program.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Properties\AssemblyInfo.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Properties\AssemblyInfo.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Properties\Resources.Designer.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Properties\Resources.Designer.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Properties\Settings.Designer.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Properties\Settings.Designer.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Simulacion.cs" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Simulacion.cs">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="app.config" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\app.config">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Properties\Settings.settings" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Properties\Settings.settings">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Form1.resx" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Form1.resx">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Parametros.resx" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Parametros.resx">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="Properties\Resources.resx" Description="Se realizó correctamente la copia de seguridad del archivo C:\Users\Rodolfo\PUC\Simulan\Simulan2\SimuLAN\Backup\Properties\Resources.resx">
+</Event><Event ErrorLevel="0" Project="SimuLAN" Source="SimuLAN.csproj" Description="El archivo de proyecto no requiere conversión.">
+</Event><Event ErrorLevel="3" Project="SimuLAN" Source="SimuLAN.csproj" Description="No requiere conversión">
+</Event><Event ErrorLevel="0" Project="" Source="SimuLAN.sln" Description="La solución se convirtió correctamente">
+</Event><Event ErrorLevel="3" Project="" Source="SimuLAN.sln" Description="Converted">
+</Event></UpgradeLog>

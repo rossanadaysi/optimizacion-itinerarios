@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimuLAN", "SimuLAN\SimuLAN.csproj", "{14DDA5DB-93DA-42FF-8A50-CA731C7BBADC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InterfazSimuLAN", "InterfazSimuLAN\InterfazSimuLAN.csproj", "{846D8B7D-E35E-40BC-B61C-BB8F5AE5CA47}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{14DDA5DB-93DA-42FF-8A50-CA731C7BBADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14DDA5DB-93DA-42FF-8A50-CA731C7BBADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14DDA5DB-93DA-42FF-8A50-CA731C7BBADC}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{14DDA5DB-93DA-42FF-8A50-CA731C7BBADC}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{846D8B7D-E35E-40BC-B61C-BB8F5AE5CA47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{846D8B7D-E35E-40BC-B61C-BB8F5AE5CA47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{846D8B7D-E35E-40BC-B61C-BB8F5AE5CA47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{846D8B7D-E35E-40BC-B61C-BB8F5AE5CA47}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

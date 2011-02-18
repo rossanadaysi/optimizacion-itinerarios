@@ -1,0 +1,123 @@
+; Please do not modify this file by hand
+; It may crash the program if mistakes are found
+; Use BIM to modify it
+[Header]
+FileID = Bytessence Install Maker
+FileVersion = 4
+[GeneralInformation]
+ProgramName = SimuLAN
+ProgramVersion = 2.0
+ProgramWebsite = 
+SupportEmail = rlcuevas@uc.cl
+CompanyName = RodolfoCuevas
+CopyrightString = RC
+OutputFile = C:\Users\Rodolfo\Desktop\InstallerSimuLAN2.0.exe
+IconFile = C:\Users\Rodolfo\Desktop\Install-blue.ico
+CompressionLevel = 2
+InstallerWindowTitle = SimuLAN v2.0 Setup
+InstallerBandText = SimuLAN Setup
+ShowWebsiteLink = 0
+ShowCopyrightNotice = 0
+UninstallOlder = 0
+[SystemRequirements]
+WinNT4 = 0
+Win98 = 0
+WinMe = 0
+Win2000 = 0
+WinXP = 1
+WinVista = 1
+Win7 = 1
+DotNETVersion = 0
+DotNETVisitWebpage = 1
+DotNETWebpageAddress = http://www.microsoft.com/downloads/en/details.aspx?FamilyID=9cfb2d51-5ff4-4491-b0e5-b386f32c0992&displaylang=en
+[ProductInfo]
+NormalDefinedPath = 1
+ReadPathFromRegistry = 0
+DefinedPath = <ProgramFiles>\<ProgramName>\
+RegistryMainKey = 0
+RegistryKeyName = Software\
+RegistryValueName = Value name
+AppendString = 0
+AppendedString = <ProductName>\
+PathNotFoundQuit = 0
+PathNotFoundMessage = 
+DisallowPathChange = 0
+CreateGroup = 1
+CustomStartMenuGroup = <StartPrograms>\SimuLAN
+CreateUninstallShortcut = 1
+CustomStartMenuUninstall = <DefaultStartMenuGroup>\Uninstall <ProgramName>.lnk
+CreateInternetLink = 0
+CustomStartMenuWebLink = <DefaultStartMenuGroup>\Visit website.url
+[VersionInfo]
+CompanyName = SimulaUC
+Copyright = 
+Email = rlcuevas@uc.cl
+FileDescription = Simulador de itinerarios de transporte aéreo
+ProductName = SimuLAN 2.0
+ProductVersion = 2.0
+Website = 
+MajorHigh = 2
+MajorLow = 0
+MinorHigh = 0
+MinorLow = 0
+[LookAndFeel]
+WizardImage = C:\Program Files (x86)\Bytessence InstallMaker\Graphics\Wizard\Modern_blue.bmp
+HeaderImage = C:\Program Files (x86)\Bytessence InstallMaker\Graphics\Header\Modern_blue.bmp
+HeaderTextColor = 0
+BKUseBK = 0
+BKUseGradient = 1
+BKUsePicture = 0
+BKFirstColorR = 128
+BKFirstColorG = 128
+BKFirstColorB = 128
+BKSecondColorR = 255
+BKSecondColorG = 255
+BKSecondColorB = 255
+BKTextColorR = 230
+BKTextColorG = 230
+BKTextColorB = 230
+BKVertical = 1
+BKHorizontal = 0
+BKPicturePath = 
+BKText = 
+BKShowCopyright = 0
+ShowInformation = 0
+InformationFile = 
+ShowLicense = 0
+LicenseFile = 
+[Localization]
+3 = English
+15 = Spanish (Español)
+[InstallerSettings]
+InputDirectory = C:\Users\Rodolfo\Desktop\SimuLAN\
+ShowRestartComputerCheckbox = 0
+ShowLaunchProgramCheckbox = 1
+LPProgramPath = <DefaultInstallPath>\InterfazSimuLAN.exe
+LPParameters = 
+LPRunAsProgram = 1
+LPRunAsFile = 0
+LPRunHidden = 0
+ShowViewDocumentationCheckbox = 1
+VDProgramPath = <DefaultInstallPath>\ManualUsuario.pdf
+VDParameters = 
+VDRunAsProgram = 0
+VDRunAsFile = 1
+VDRunHidden = 0
+ShowOpenReadmeCheckbox = 0
+ORProgramPath = 
+ORParameters = 
+ORRunAsProgram = 1
+ORRunAsFile = 0
+ORRunHidden = 0
+ShowVisitWebsiteCheckbox = 0
+OWWebsiteAddress = http://
+[UninstallerSettings]
+CreateUninstaller = 1
+CreateAddRemoveEntry = 1
+UseClassicUninstallerIcon = 1
+UseCustomUninstallerIcon = 0
+CustomUninstallerIconPath = 
+CustomUninstallerIconIndex = 0
+UninstRestartPC = 0
+[SkipUninstallFiles]
+73159519 = <DefaultInstallPath>\InterfazSimuLAN.exe.config

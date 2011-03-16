@@ -220,7 +220,7 @@ namespace InterfazSimuLAN.AccesoData
                 {
                     Tramo tramo = new Tramo(tramoBase, itinerario.AvionesDictionary[dataObjeto.idAvion].UltimoTramoAgregado, itinerario.FechaInicio);
                     tramo.GetAvion = itinerario.GetAvion;
-                    tramo.GetTurnAroundMin = parametros.GetDelegateTurnAroundMin();
+                    tramo.GetTurnAroundMinimo = parametros.GetDelegateTurnAroundMin();
                     itinerario.AvionesDictionary[dataObjeto.idAvion].AgregarTramoEnOrden(tramo);
                     itinerario.Tramos.Add(itinerario.ContadorTramos, tramo);
                 }

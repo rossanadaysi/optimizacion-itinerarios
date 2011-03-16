@@ -20,31 +20,16 @@ using SimuLAN.Clases.ControlInformacion;
 using BrightIdeasSoftware;
 using SimuLAN.Utils;
 using SimuLAN.Clases.Recovery;
+using SimuLAN.Clases.Optimizacion;
 
 namespace InterfazSimuLAN
 {
-    /// <summary>
-    /// Delegafo para actualizar el porcentaje de progreso desplegado en los menúes de simulación normal y multiescenario.
-    /// </summary>
-    /// <param name="s">Porcentaje en formato de texto</param>
-    public delegate void ActualizarPorcentajeEventHandler(string s);
 
-    /// <summary>
-    /// Delegado para cambiar la visibilidad de los elementos de la interfaz dependiendo del estado de los procesos de simulación.
-    /// </summary>
-    /// <param name="cursor">Cursor desplegado</param>
-    public delegate void CambiarVistaSimularEventHandler(Cursor cursor);
 
     /// <summary>
     /// Delegado para inicilizar listas desplegadas en tab de itinerario.
     /// </summary>
     public delegate void CargarListasEventHandler();
-
-    /// <summary>
-    /// Delegado para desplegar mensaje en el label inferior izquierdo de la interfaz principal de SimuLAN.
-    /// </summary>
-    /// <param name="mensaje">Texto con el mensaje</param>
-    public delegate void EnviarMensajeEventHandler(string mensaje);
 
     /// <summary>
     /// Enumeración con las posibles extensiones que puede tener el itinerario.
@@ -396,19 +381,6 @@ namespace InterfazSimuLAN
             _itinerarioBase.CargarInfoRutasEnTramos(_parametrosBase.MapVuelosRutas);
             _itinerarioBase.CargarSlots();
         }
-        
-        /// <summary>
-        /// Construye conexiones de pasajeros y de pairings
-        /// </summary>
-        private void CrearConexiones()
-        {
-            _itinerarioBase.Conexiones_Lista.Clear();
-            ConexionPairing.TIEMPO_CAMBIO_AVION = _parametrosBase.Escalares.MinPairing;
-            ConexionPairing.TIEMPO_MAXIMO_PAIRING = _parametrosBase.Escalares.MaxPairing;
-            _itinerarioBase.CrearConexionesPairing(_parametrosBase.Conexiones.Pairings);
-            _itinerarioBase.CrearConexionesPasajeros(_parametrosBase.Conexiones.PaxConex, _parametrosBase.Conexiones.Hubs, _parametrosBase.Escalares.Semilla);
-            _itinerarioBase.CargarDelegatesEnConexiones(_parametrosBase.Conexiones.ControladorConexionesPax.GetMinutosEsperaPax);
-        }
 
         /// <summary>
         /// Consolida información de itinerario, parámetros y curvas luego de que estos han sido cargados.
@@ -422,7 +394,7 @@ namespace InterfazSimuLAN
                 CargarTablasEnItinerario();
                 AgregarInfoMantos();
                 _itinerarioBase.CargarInfoHubsToAeropuertos(_parametrosBase.Conexiones.Hubs);
-                CrearConexiones();
+                _itinerarioBase.CrearConexiones(_parametrosBase);
                 _itinerarioBase.CargarTurnosBackup(_parametrosBase.InfoGruposFlotas);
                 _modeloDisrupcionesBase.ColeccionDisrupciones[TipoDisrupcion.METEREOLOGIA.ToString()].FactorDesviacionEscenario = _factoresEscenarios[TipoDisrupcion.METEREOLOGIA];
                 _modeloDisrupcionesBase.ColeccionDisrupciones[TipoDisrupcion.MANTENIMIENTO.ToString()].FactorDesviacionEscenario = _factoresEscenarios[TipoDisrupcion.MANTENIMIENTO];
@@ -457,22 +429,6 @@ namespace InterfazSimuLAN
         }
 
         /// <summary>
-        /// Carga delegados de para control climático sobre aeropuertos del itinerario.
-        /// </summary>
-        private void CargarDelegadosWxsEnAeropuertos()
-        {
-            List<string> keysAeropuertos = new List<string>();
-            foreach (string s in _itinerarioBase.AeropuertosDictionary.Keys)
-            {
-                keysAeropuertos.Add(s);
-            }
-            foreach (string s in keysAeropuertos)
-            {
-                _itinerarioBase.AeropuertosDictionary[s].GetProbabilidadClima = _modeloDisrupcionesBase.GetProbabilidadClimaAeropuerto();
-            }
-        }
-
-        /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
@@ -495,198 +451,33 @@ namespace InterfazSimuLAN
             return s;
         }
 
-        /// <summary>
-        /// Genera una secuencia de números aleatorios sobre las distintas réplicas en función de una semilla principal 
-        /// </summary>
-        /// <param name="nReplicas">Cantidad de réplicas de simulación</param>
-        /// <param name="semillaPrincipal">Semilla principal de la simulación</param>
-        /// <returns>Arreglo con las semillas usadas por réplica</returns>
-        private int[] GenerarSemillas(int nReplicas, int semillaPrincipal)
+        ///// <summary>
+        ///// Inicia proceso de optmización de un escenario simple.
+        ///// </summary>
+        public void Optimizar()
         {
-            Random rdm = new Random(semillaPrincipal);
-            int[] semillas = new int[nReplicas];
-            for (int i = 0; i < nReplicas; i++)
-            {
-                semillas[i] = rdm.Next();
-            }
-            return semillas;
-        }
-
-        /// <summary>
-        /// Simula uno de los escenarios que componen el proceso de simulación multiescenario.
-        /// </summary>
-        /// <param name="data_reporte_multiescenario">Diccionario con la información almacenada para los reportes de simulación multiescenario general</param>
-        /// <param name="data_reporte_multiescenario_negocios">Diccionario con la información almacenada para los reportes de simulación multiescenario por negocios</param>
-        private void SimularEscenario(out Dictionary<int, Dictionary<int, double>> data_reporte_multiescenario, out Dictionary<string, Dictionary<int, Dictionary<int, double>>> data_reporte_multiescenario_negocios)
-        {
-            //Inicializa diccionarios de output
-            data_reporte_multiescenario = new Dictionary<int, Dictionary<int, double>>();
-            data_reporte_multiescenario_negocios = new Dictionary<string, Dictionary<int, Dictionary<int, double>>>();
-            foreach (string negocio in _itinerarioBase.Negocios)
-            {
-                data_reporte_multiescenario_negocios.Add(negocio, new Dictionary<int, Dictionary<int, double>>());
-            }
-
-            //Genera semillas
-            int[] semillaReplicas = GenerarSemillas(_parametrosBase.Escalares.Replicas, _parametrosBase.Escalares.Semilla);
-
-            //Carga delegadoss de control del clima en aeropuertos
-            CargarDelegadosWxsEnAeropuertos();
-
-            //Crea conexiones
-            CrearConexiones();
-
-            //Simulaciones por réplica
-            for (int i = 0; i < _parametrosBase.Escalares.Replicas; i++)
-            {
-                Simulacion sim;
-
-                //Realiza proceso de simulación
-                SimularReplica(semillaReplicas[i], out sim, _menuSimulacionMultiescenario.FechaInicioReportes, _menuSimulacionMultiescenario.FechaTerminoReportes);
-
-                //Estima puntualidad
-                data_reporte_multiescenario.Add(i, sim.StdCalculado);
-                foreach (string negocio in _itinerarioBase.Negocios)
-                {
-                    data_reporte_multiescenario_negocios[negocio].Add(i, sim.EstimarPuntualidadNegocio(negocio));
-                }
-
-                //Libera memoria
-                sim.Dispose();
-            }
-            GC.Collect();
-        }
-
-        /// <summary>
-        ///  Inicia proceso de simulación multiescenario por clima y mantenimiento.
-        /// </summary>
-        internal void SimularMultiescenario()
-        {
-            //Inicialización
+            ActualizarPorcentajeEventHandler actualizarPorcentaje;
+            CambiarVistaSimularEventHandler cambiarVista;
             DateTime tiempoInicio = DateTime.Now;
-            _menuSimulacionMultiescenario.Invoke(new CambiarVistaSimularEventHandler(_menuSimulacionMultiescenario.CambiarVistaSimulacion), Cursors.WaitCursor);
             _simulacion_cancelada = false;
             _simulando = true;
-            //Carga escenarios
-            Dictionary<int, TipoEscenarioDisrupcion> escenarios = new Dictionary<int, TipoEscenarioDisrupcion>();
-            escenarios.Add(1, TipoEscenarioDisrupcion.Bueno);
-            escenarios.Add(2, TipoEscenarioDisrupcion.Normal);
-            escenarios.Add(3, TipoEscenarioDisrupcion.Malo);
-            int contador = 1;
-            _menuSimulacionMultiescenario.Invoke(new ActualizarPorcentajeEventHandler(_menuSimulacionMultiescenario.ActualizarPorcentaje), "0%");      
-            //Carga diccionarios que almacenan output del proceso para la generación de reportes.
-            Dictionary<string, Dictionary<int, Dictionary<int, double>>> outputSimulacionMultiescenario = new Dictionary<string, Dictionary<int, Dictionary<int, double>>>();
-            Dictionary<string, Dictionary<string, Dictionary<int, Dictionary<int, double>>>> outputSimulacionMultiescenarioNegocios = new Dictionary<string, Dictionary<string, Dictionary<int, Dictionary<int, double>>>>();
+            actualizarPorcentaje = this._menuSimulacionNormal.GetActualizarPorcentaje;
+            cambiarVista = this._menuSimulacionNormal.GetCambiarVistaSimulacion;
+            Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, 15, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
+            optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada);
             
-            //Itera sobre escenario de metereología
-            foreach (int key1 in escenarios.Keys)
-            {
-                _modeloDisrupcionesBase.MapDisrupcionesEscenario[TipoDisrupcion.METEREOLOGIA] = escenarios[key1];
-
-                //Itera sobre escenario de mantto
-                foreach (int key2 in escenarios.Keys)
-                {
-                    string nombreExperimento = "Escenario Clima " + escenarios[key1] + " - Escenario Mantto " + escenarios[key2];
-                    string keyExperimento = key1 + "-" + key2;
-                    _modeloDisrupcionesBase.MapDisrupcionesEscenario[TipoDisrupcion.MANTENIMIENTO] = escenarios[key2];
-                    Invoke(_enviarMensajeSimulacion, "Inicio experimento " + contador + ":\n" + nombreExperimento + ".");
-                    _menuSimulacionMultiescenario.Invoke(new ActualizarPorcentajeEventHandler(_menuSimulacionMultiescenario.ActualizarPorcentaje), Convert.ToString(Convert.ToInt32(100.0 * (contador - 1) / (escenarios.Count * escenarios.Count))) + "%");
-                    Dictionary<int, Dictionary<int, double>> data_reporte_multiescenario;
-                    Dictionary<string, Dictionary<int, Dictionary<int, double>>> data_reporte_multiescenario_rutas;
-                    
-                    //Hace proceso de simulación de un escenario
-                    SimularEscenario(out data_reporte_multiescenario, out data_reporte_multiescenario_rutas);
-
-                    //Post proceso output de la simulación del escenario
-                    outputSimulacionMultiescenario.Add(keyExperimento, data_reporte_multiescenario);
-                    outputSimulacionMultiescenarioNegocios.Add(keyExperimento, data_reporte_multiescenario_rutas);
-                    contador++;
-
-                    //Libera memoria 
-                    GC.Collect();
-                    if (_simulacion_cancelada)
-                    {
-                        break;
-                    }
-                }
-                if (_simulacion_cancelada)
-                {
-                    break;
-                }
-            }            
-
-            //Genera reportes.
             if (!_simulacion_cancelada)
-            {
-                Invoke(_enviarMensajeSimulacion, "Generando reporte...");
-                CrearReportesMultiescenario(outputSimulacionMultiescenario, outputSimulacionMultiescenarioNegocios, _itinerarioBase.Negocios, _enviarMensajeSimulacion);
-                Invoke(_enviarMensajeSimulacion, "Simulación multiescenario terminada en " + Math.Round((DateTime.Now - tiempoInicio).TotalSeconds, 1).ToString() + " segundos.");
+            {               
+                cambiarVista();
             }
-            _menuSimulacionMultiescenario.Invoke(new CambiarVistaSimularEventHandler(_menuSimulacionMultiescenario.CambiarVistaSimulacion), Cursors.Default);
-            _simulando = false;
-            if (_simulacion_cancelada)
-            {
-                _menuSimulacionMultiescenario.Invoke(_menuSimulacionMultiescenario.OcultarVentana);
-                _simulacion_cancelada = false;
-            }
-        }
-
-        /// <summary>
-        /// Inicia proceso de simulación de un escenario simple.
-        /// </summary>
-        internal void SimularNormal()
-        {
-            _simulacion_cancelada = false;
-            //Proceso de inicialización
-            _simulando = true;            
-            List<Simulacion> informacionReplicas = new List<Simulacion>();
-            int[] semillaReplicas = GenerarSemillas(_parametrosBase.Escalares.Replicas, _parametrosBase.Escalares.Semilla);
-            _menuSimulacionNormal.Invoke(new ActualizarPorcentajeEventHandler(_menuSimulacionNormal.ActualizarPorcentaje), "0%");
-            Invoke(_enviarMensajeSimulacion, "Simulando...");
-            _menuSimulacionNormal.Invoke(new CambiarVistaSimularEventHandler(_menuSimulacionNormal.CambiarVistaSimulacion), Cursors.WaitCursor);
-            DateTime tiempoInicio = DateTime.Now;
-            CargarDelegadosWxsEnAeropuertos();
-            _modeloDisrupcionesBase.Refresh();
-
-            //Crea conexiones
-            CrearConexiones();
-
-            //Simulaciones por réplica
-            for (int i = 0; i < _parametrosBase.Escalares.Replicas; i++)
-            {
-                Simulacion sim;
-
-                //Realiza proceso de simulación
-                SimularReplica(semillaReplicas[i], out sim, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
-
-                //Actualiza % en label de menú de simulación
-                _menuSimulacionNormal.Invoke(new ActualizarPorcentajeEventHandler(_menuSimulacionNormal.ActualizarPorcentaje), Convert.ToString(Convert.ToInt32(100 * (i + 1) / _parametrosBase.Escalares.Replicas)) + "%");
-
-                //Agrega información de réplica en lista de simulaciones.
-                informacionReplicas.Add(sim);
-
-                if (_simulacion_cancelada)
-                {
-                    break;
-                }
-            }
-            if (!_simulacion_cancelada)
-            {
-                //Crea reportes
-                Invoke(_enviarMensajeSimulacion, "Generando reportes...");
-                CrearReportesNormal(informacionReplicas, _enviarMensajeSimulacion);
-            }
-            foreach (Simulacion s in informacionReplicas)
-            {
-                s.Dispose();
-            }
-            informacionReplicas = null;
-
-            //Finaliza proceso cambiando la vista y desplegando mensaje de finalización en label principal.
+            //foreach (Simulacion s in informacionReplicas)
+            //{
+            //    s.Dispose();
+            //}
             DateTime tiempo_fin = DateTime.Now;
-            _menuSimulacionNormal.Invoke(new CambiarVistaSimularEventHandler(_menuSimulacionNormal.CambiarVistaSimulacion), Cursors.Default);
-            Invoke(_enviarMensajeSimulacion, "Simulación terminada en " + Math.Round((tiempo_fin - tiempoInicio).TotalSeconds, 1).ToString() + " segundos.");
+            Invoke(_enviarMensajeSimulacion, "Optimización terminada en " + Math.Round((tiempo_fin - tiempoInicio).TotalSeconds, 1).ToString() + " segundos.");
             _simulando = false;
+            optimizador = null;
             GC.Collect();
             if (_simulacion_cancelada)
             {
@@ -696,34 +487,79 @@ namespace InterfazSimuLAN
         }
 
         /// <summary>
-        /// Realiza una réplica de simulación        
+        ///  Inicia proceso de simulación multiescenario por clima y mantenimiento.
         /// </summary>
-        /// <param name="semilla">Semilla de la réplica</param>
-        /// <param name="sim">Referencia a objeto que encapsula la simulación</param>
-        /// <param name="fechaIni">Fecha de inicio del procesamiento de los reportes.</param>
-        /// <param name="fechaFin">Fecha de término del procesamiento de los reportes.</param>       
-        private void SimularReplica(int semilla, out Simulacion sim, DateTime fechaIni, DateTime fechaFin)
+        internal void SimularMultiescenario()
+        {                
+            ActualizarPorcentajeEventHandler actualizarPorcentaje = this._menuSimulacionMultiescenario.GetActualizarPorcentaje;
+            CambiarVistaSimularEventHandler  cambiarVista = this._menuSimulacionMultiescenario.GetCambiarVistaSimulacion;  
+            DateTime tiempoInicio = DateTime.Now;
+            cambiarVista();
+            _simulacion_cancelada = false;
+            _simulando = true;
+            actualizarPorcentaje("0%");
+            cambiarVista();
+            //Carga diccionarios que almacenan output del proceso para la generación de reportes.
+            Dictionary<string, Dictionary<int, Dictionary<int, double>>> outputSimulacionMultiescenario;
+            Dictionary<string, Dictionary<string, Dictionary<int, Dictionary<int, double>>>> outputSimulacionMultiescenarioNegocios;            
+            //Itera sobre escenario de metereología
+            ManagerSimulacion manager = new ManagerSimulacion(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, _stds, _menuSimulacionMultiescenario.FechaInicioReportes, _menuSimulacionMultiescenario.FechaTerminoReportes, this._enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada);
+            //Hace proceso de simulación de un escenario
+            manager.SimularMultiescenario(out outputSimulacionMultiescenario,out outputSimulacionMultiescenarioNegocios);
+             //Genera reportes.
+            if (!_simulacion_cancelada)
+            {
+                _enviarMensajeSimulacion("Generando reporte...");
+                CrearReportesMultiescenario(outputSimulacionMultiescenario, outputSimulacionMultiescenarioNegocios, _itinerarioBase.Negocios, _enviarMensajeSimulacion);
+                _enviarMensajeSimulacion("Simulación multiescenario terminada en " + Math.Round((DateTime.Now - tiempoInicio).TotalSeconds, 1).ToString() + " segundos.");
+            }
+            manager = null;
+            cambiarVista();
+            _simulando = false;
+            GC.Collect();
+            if (_simulacion_cancelada)
+            {
+                _menuSimulacionMultiescenario.Invoke(_menuSimulacionMultiescenario.OcultarVentana);
+                _simulacion_cancelada = false;
+            }
+        }
+       
+        ///// <summary>
+        ///// Inicia proceso de simulación de un escenario simple.
+        ///// </summary>
+        public void SimularNormal()
         {
-            //Clona itinerario
-            Itinerario itinerarioReplica = _itinerarioBase.Clonar(semilla);
-
-            //Carga turnos de backup
-            itinerarioReplica.CargarTurnosBackup(_parametrosBase.InfoGruposFlotas);
-
-            //Carga info de WXS histórica
-            itinerarioReplica.CargarInfoWXSHistoricaEnAeropuertos(_modeloDisrupcionesBase.CurvasAeropuerto);
-
-            //Crea instancia de simulación
-            sim = new Simulacion(itinerarioReplica, _parametrosBase, _modeloDisrupcionesBase, _stds, fechaIni, fechaFin);
-
-            //Inicia la simulación
-            sim.Simular();
-
-            //Procesa atrasos reaccionarios de  slots de mantto
-            sim.Itinerario.PostProcesarSlotsMantto();
-
-            //Estima puntualidad de la réplica recién procesada
-            sim.EstimarPuntualidadReplica();
+            ActualizarPorcentajeEventHandler actualizarPorcentaje;
+            CambiarVistaSimularEventHandler cambiarVista;
+            DateTime tiempoInicio = DateTime.Now;
+            _simulacion_cancelada = false;
+            _simulando = true; 
+            actualizarPorcentaje = this._menuSimulacionNormal.GetActualizarPorcentaje;
+            cambiarVista = this._menuSimulacionNormal.GetCambiarVistaSimulacion;
+            cambiarVista();     
+            ManagerSimulacion managerSimulacion = new ManagerSimulacion(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, _stds, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes, this._enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada);
+            List<Simulacion> informacionReplicas = managerSimulacion.SimularNormal();
+            if (!_simulacion_cancelada)
+            {
+                Invoke(_enviarMensajeSimulacion, "Generando reportes...");
+                CrearReportesNormal(informacionReplicas, _enviarMensajeSimulacion);
+            }
+            foreach (Simulacion s in informacionReplicas)
+            {
+                s.Dispose();
+            }
+            informacionReplicas = null;
+            DateTime tiempo_fin = DateTime.Now;
+            Invoke(_enviarMensajeSimulacion, "Simulación terminada en " + Math.Round((tiempo_fin - tiempoInicio).TotalSeconds, 1).ToString() + " segundos.");
+            cambiarVista();
+            _simulando = false;
+            managerSimulacion = null;
+            GC.Collect();            
+            if (_simulacion_cancelada)
+            {
+                _menuSimulacionNormal.Invoke(_menuSimulacionNormal.OcultarVentana);
+                _simulacion_cancelada = false;
+            }
         }
 
         #endregion

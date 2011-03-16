@@ -8,6 +8,21 @@ using SimuLAN.Clases.Recovery;
 namespace SimuLAN.Clases
 {
     /// <summary>
+    /// Delegafo para actualizar el porcentaje de progreso desplegado en los menúes de simulación normal y multiescenario.
+    /// </summary>
+    /// <param name="s">Porcentaje en formato de texto</param>
+    public delegate void ActualizarPorcentajeEventHandler(string s);
+
+    /// <summary>
+    /// Delegado para cambiar la visibilidad de los elementos de la interfaz dependiendo del estado de los procesos de simulación.
+    /// </summary>
+    public delegate void CambiarVistaSimularEventHandler();
+    /// <summary>
+    /// Delegado para desplegar mensaje en el label inferior izquierdo de la interfaz principal de SimuLAN.
+    /// </summary>
+    /// <param name="mensaje">Texto con el mensaje</param>
+    public delegate void EnviarMensajeEventHandler(string mensaje);
+    /// <summary>
     /// Delegado que encapsula el método de actualización del tiempo de simulación
     /// </summary>
     /// <param name="t"></param>

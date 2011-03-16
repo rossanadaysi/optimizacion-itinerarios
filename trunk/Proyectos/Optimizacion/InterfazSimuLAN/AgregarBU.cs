@@ -190,7 +190,7 @@ namespace InterfazSimuLAN
             this.TextBox_Matricula.Text = _tramo_base_slot.Numero_Ac;            
             this.TextBox_Inicio_Min.Text = _tramo_base_slot.Fecha_Salida.ToShortDateString() + " " + Utilidades.GetHora(_tramo_base_slot.Hora_Salida);
             this.TextBox_Termino_Max.Text = _tramo_base_slot.Fecha_Llegada.ToShortDateString() + " " + Utilidades.GetHora(_tramo_base_slot.Hora_Llegada);
-            int turn_around_min = this._tramo_final.GetTurnAroundMin(this._tramo_final);
+            int turn_around_min = this._tramo_final.GetTurnAroundMinimo(this._tramo_final);
             this._fecha_ini_min = Convert.ToDateTime(TextBox_Inicio_Min.Text).AddMinutes(turn_around_min);
             this._fecha_termino_max = Convert.ToDateTime(TextBox_Termino_Max.Text).AddMinutes(-turn_around_min);
             this.TextBox_Inicio_Min.Text = this._fecha_ini_min.ToString("yyyy-MM-dd HH:mm");

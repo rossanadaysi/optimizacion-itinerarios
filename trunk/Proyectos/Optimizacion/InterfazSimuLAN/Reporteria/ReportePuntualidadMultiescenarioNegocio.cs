@@ -7,6 +7,7 @@ using NPOI.HPSF;
 using NPOI.POIFS.FileSystem;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
+using SimuLAN.Utils;
 
 namespace InterfazSimuLAN.Reportes
 {

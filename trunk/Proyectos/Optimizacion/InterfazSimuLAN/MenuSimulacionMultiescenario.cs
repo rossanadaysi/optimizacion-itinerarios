@@ -55,7 +55,14 @@ namespace InterfazSimuLAN
         {
             get { return dateTimePicker2.Value; }
         }
-
+        public CambiarVistaSimularEventHandler GetCambiarVistaSimulacion
+        {
+            get { return new CambiarVistaSimularEventHandler(this.CambiarVistaSimulacion); }
+        }
+        public ActualizarPorcentajeEventHandler GetActualizarPorcentaje
+        {
+            get { return new ActualizarPorcentajeEventHandler(this.ActualizarPorcentaje); }
+        }
         /// <summary>
         /// String con el sufijo especial para los reportes
         /// </summary>
@@ -107,6 +114,15 @@ namespace InterfazSimuLAN
         /// <param name="s">String con el porcentaje actual</param>
         internal void ActualizarPorcentaje(string s)
         {
+            this.Invoke(new ActualizarPorcentajeEventHandler(ActualizarPorcentaje2), s);
+
+        }
+        /// <summary>
+        /// Actualiza el porcentaje de progreso de la simulación
+        /// </summary>
+        /// <param name="s">String con el porcentaje actual</param>
+        internal void ActualizarPorcentaje2(string s)
+        {
             labelBarra.Text = s;
             labelBarra.Refresh();
         }
@@ -139,7 +155,12 @@ namespace InterfazSimuLAN
         /// Cambia la vista del form dependiendo si se está en proceso de simulación o no.
         /// </summary>
         /// <param name="cursor">Tipo de cursor seteado</param>
-        internal void CambiarVistaSimulacion(Cursor cursor)
+        internal void CambiarVistaSimulacion()
+        {
+            this.Invoke(new CambiarVistaSimularEventHandler(CambiarVistaSimulacion2));
+        }
+
+        private void CambiarVistaSimulacion2()
         {
             this.pictureBox1.Visible = !this.pictureBox1.Visible;
             this.labelBarra.Visible = !this.labelBarra.Visible;
@@ -149,10 +170,18 @@ namespace InterfazSimuLAN
             this.groupBox_sim.Enabled = !this.groupBox_sim.Enabled;
             this.groupBox_turnos.Enabled = !this.groupBox_turnos.Enabled;
             this.groupBox_estandares.Enabled = !this.groupBox_estandares.Enabled;
-            this.Cursor = (Cursor)cursor;
-            this._main.Cursor = (Cursor)cursor;
+            Cursor actual = this._main.Cursor;
+            if (actual == Cursors.Default)
+            {
+                this.Cursor = Cursors.WaitCursor;
+                this._main.Cursor = Cursors.WaitCursor;
+            }
+            else
+            {
+                this.Cursor = Cursors.Default;
+                this._main.Cursor = Cursors.Default;
+            }
         }
-
         /// <summary>
         /// Inicializa el selector de fechas para los reportes
         /// </summary>

@@ -537,20 +537,20 @@ namespace SimuLAN.Clases
                 Tramo auxTramo = tramoInicial;
                 //Se crea slot inicial
                 //_slot_raiz = new Slot(tramoInicial.TramoBase.Origen, auxTramo.IdAvionProgramado, 0, tramoInicial.TInicialProg, tramoInicial.GetTurnAroundMin(tramoInicial),tramoInicial.TramoBase.Fecha_Salida.AddDays(-1),tramoInicial.TramoBase.Fecha_Salida,"0000",tramoInicial.TramoBase.Hora_Salida);
-                _slot_raiz = new Slot(tramoInicial.TramoBase.Origen, auxTramo.IdAvionProgramado, tramoInicial.TInicialProg, tramoInicial.TInicialProg, tramoInicial.GetTurnAroundMin(tramoInicial), tramoInicial.TramoBase.Fecha_Salida, tramoInicial.TramoBase.Fecha_Salida, tramoInicial.TramoBase.Hora_Salida, tramoInicial.TramoBase.Hora_Salida, tramoInicial);
+                _slot_raiz = new Slot(tramoInicial.TramoBase.Origen, auxTramo.IdAvionProgramado, tramoInicial.TInicialProg, tramoInicial.TInicialProg, tramoInicial.GetTurnAroundMinimo(tramoInicial), tramoInicial.TramoBase.Fecha_Salida, tramoInicial.TramoBase.Fecha_Salida, tramoInicial.TramoBase.Hora_Salida, tramoInicial.TramoBase.Hora_Salida, tramoInicial);
                 _slot_raiz.SlotPrevio = null;
                 _slot_actual = _slot_raiz;
                 while (auxTramo.Tramo_Siguiente != null)
                 {
                     auxTramo = auxTramo.Tramo_Siguiente;
-                    _slot_actual.SlotSiguiente = new Slot(auxTramo.TramoBase.Origen, auxTramo.IdAvionProgramado, auxTramo.Tramo_Previo.TFinalProg, auxTramo.TInicialProg, auxTramo.GetTurnAroundMin(auxTramo), auxTramo.Tramo_Previo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Fecha_Salida, auxTramo.Tramo_Previo.TramoBase.Hora_Llegada, auxTramo.TramoBase.Hora_Salida, auxTramo);
+                    _slot_actual.SlotSiguiente = new Slot(auxTramo.TramoBase.Origen, auxTramo.IdAvionProgramado, auxTramo.Tramo_Previo.TFinalProg, auxTramo.TInicialProg, auxTramo.GetTurnAroundMinimo(auxTramo), auxTramo.Tramo_Previo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Fecha_Salida, auxTramo.Tramo_Previo.TramoBase.Hora_Llegada, auxTramo.TramoBase.Hora_Salida, auxTramo);
                     _slot_actual.SlotSiguiente.SlotPrevio = _slot_actual;
                     _slot_actual = _slot_actual.SlotSiguiente;
                 }
                 //Par el último slot se asume cierta cantidad de minutos donde termina el itinerario
                 //corregir.. puede que no importe.
                 //_slot_actual.SlotSiguiente = new Slot(auxTramo.TramoBase.Destino, auxTramo.IdAvionProgramado, auxTramo.TFinalProg, minutosFinalUltimoSlot, auxTramo.GetTurnAroundMin(auxTramo), auxTramo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Fecha_Llegada.AddDays(1), auxTramo.TramoBase.Hora_Llegada, "0000");
-                _slot_actual.SlotSiguiente = new Slot(auxTramo.TramoBase.Destino, auxTramo.IdAvionProgramado, auxTramo.TFinalProg, auxTramo.TFinalProg, auxTramo.GetTurnAroundMin(auxTramo), auxTramo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Hora_Llegada, auxTramo.TramoBase.Hora_Llegada, null);
+                _slot_actual.SlotSiguiente = new Slot(auxTramo.TramoBase.Destino, auxTramo.IdAvionProgramado, auxTramo.TFinalProg, auxTramo.TFinalProg, auxTramo.GetTurnAroundMinimo(auxTramo), auxTramo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Fecha_Llegada, auxTramo.TramoBase.Hora_Llegada, auxTramo.TramoBase.Hora_Llegada, null);
                 _slot_actual.SlotSiguiente.SlotPrevio = _slot_actual;
                 _slot_actual.SlotSiguiente.SlotSiguiente = null;
                 _slot_actual = _slot_raiz;
@@ -686,7 +686,7 @@ namespace SimuLAN.Clases
                     int inicio_conteo = Math.Max(ini, tramoAux.TInicialRst);
                     int fin_conteo = Math.Min(fin, tramoAux.TFinalRst);
                     minutos_vuelo += fin_conteo - inicio_conteo;
-                    int turnAround = tramoAux.GetTurnAroundMin(tramoAux);
+                    int turnAround = tramoAux.GetTurnAroundMinimo(tramoAux);
                     if (tramoAux.Tramo_Siguiente != null && tramoAux.Tramo_Siguiente.TInicialRst > fin)
                     {
                         ultimoTramo = true;
@@ -984,7 +984,7 @@ namespace SimuLAN.Clases
                 Tramo tramo_previo_conex = conexionPairing.GetTramo(conexionPairing.NumTramoIni);
                 puedeDespegar = tramo_previo_conex.PuedeDespegar;
                 int tiempoResultanteActualDespegue = Tramo_Actual.TInicialRst;
-                int turnAroundTramoActual = Tramo_Actual.GetTurnAroundMin(Tramo_Actual);
+                int turnAroundTramoActual = Tramo_Actual.GetTurnAroundMinimo(Tramo_Actual);
                 int turnAroundConexion = ConexionPairing.TIEMPO_CAMBIO_AVION;
                 int tiempoFinalTramoPrevio = tramo_previo_conex.TiempoFinalResultanteEstimado();
                 int atrasoPairing = Math.Max(0, tiempoFinalTramoPrevio + turnAroundConexion - tiempoResultanteActualDespegue);
@@ -1042,7 +1042,7 @@ namespace SimuLAN.Clases
                 puedeDespegar = tramo_previo_conex.PuedeDespegar;
                 //Estima atraso reaccionario de tripulacion
                 int tiempoResultanteActualDespegue = Tramo_Actual.TInicialRst;
-                int turnAroundTramoActual = Tramo_Actual.GetTurnAroundMin(Tramo_Actual);
+                int turnAroundTramoActual = Tramo_Actual.GetTurnAroundMinimo(Tramo_Actual);
                 int turnAroundConexion = ConexionPairing.TIEMPO_CAMBIO_AVION;
                 int tiempoFinalTramoPrevio = tramo_previo_conex.TiempoFinalResultanteEstimado();
                 int atraso = Math.Max(0, tiempoFinalTramoPrevio + turnAroundConexion - tiempoResultanteActualDespegue);
@@ -1119,7 +1119,7 @@ namespace SimuLAN.Clases
             Tramo_Actual.FlotaOperada = GetFlota(this._ac_type);
             _recien_aterrizado = false;
             if(Tramo_Actual!=null && Tramo_Actual.Tramo_Siguiente!=null)
-                turnAround = Tramo_Actual.Tramo_Siguiente.GetTurnAroundMin(Tramo_Actual.Tramo_Siguiente);
+                turnAround = Tramo_Actual.Tramo_Siguiente.GetTurnAroundMinimo(Tramo_Actual.Tramo_Siguiente);
 
             //Registra atraso reaccionario (si existiera)
             if (Tramo_Actual.IdAvionProgramado != this._id_avion || _recovery_reciente || Tramo_Actual.TramoPostCadenaSwap || Tramo_Actual.HayMantenimientoAnterior)
@@ -1252,7 +1252,7 @@ namespace SimuLAN.Clases
             //Se avanza hacia tramos posteriores hasta el último si es que no se cumple alguna de las condiciones de término
             while (tramoObjetivo != null)
             {               
-                int turnAroundTime = tramoObjetivo.GetTurnAroundMin(tramoObjetivo);
+                int turnAroundTime = tramoObjetivo.GetTurnAroundMinimo(tramoObjetivo);
                 //En este caso se puede reducir el atraso reaccionario ya que hay una holgura
                 if (tramoObjetivo.TInicialRst - tramoObjetivo.TFinRstTramoPrevio > turnAroundTime)
                 {
@@ -1421,7 +1421,7 @@ namespace SimuLAN.Clases
                     if (tramoAux.MantenimientoPosterior == null)
                     {
                         //Se calculan los minutos de holgura ajustando el turn around al mínimo
-                        int minutosLibres = tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.Tramo_Siguiente.TFinRstTramoPrevio - tramoAux.Tramo_Siguiente.GetTurnAroundMin(tramoAux.Tramo_Siguiente);
+                        int minutosLibres = tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.Tramo_Siguiente.TFinRstTramoPrevio - tramoAux.Tramo_Siguiente.GetTurnAroundMinimo(tramoAux.Tramo_Siguiente);
                         //Si hay minutos libres se ajusta el tiempo de despegue y aterrizaje
                         if (minutosLibres >= 0)
                         {
@@ -1761,7 +1761,7 @@ namespace SimuLAN.Clases
                 }
                 else
                 {
-                    int finManttoMasTAT = Tramo_Actual.Tramo_Previo.MantenimientoPosterior.TiempoFinManttoRst + Tramo_Actual.GetTurnAroundMin(Tramo_Actual);
+                    int finManttoMasTAT = Tramo_Actual.Tramo_Previo.MantenimientoPosterior.TiempoFinManttoRst + Tramo_Actual.GetTurnAroundMinimo(Tramo_Actual);
                     int minutosMaximoAdelanto = Math.Max(Tramo_Actual.TInicialRst - finManttoMasTAT,0);
                     int adelanto = Math.Min(minutosMaximoAdelanto, adelantoGenerado);
                     return adelanto;
@@ -1776,7 +1776,7 @@ namespace SimuLAN.Clases
                 else
                 {
                     SlotMantenimiento primerSlot = this.SlotsMantenimiento[0];
-                    int finManttoMasTAT = primerSlot.TiempoFinManttoRst + Tramo_Actual.GetTurnAroundMin(Tramo_Actual);
+                    int finManttoMasTAT = primerSlot.TiempoFinManttoRst + Tramo_Actual.GetTurnAroundMinimo(Tramo_Actual);
                     int minutosMaximoAdelanto = Math.Max(Tramo_Actual.TInicialRst - finManttoMasTAT, 0);
                     //int adelantoGenerado = Convert.ToInt32(Tramo_Actual.InfoAtrasos[TipoDisrupcion.Adelanto].GenerarAtraso(Tramo_Actual.RdmTramo));
                     int adelanto = Math.Min(minutosMaximoAdelanto, adelantoGenerado);

@@ -57,6 +57,11 @@
             this.label1 = new System.Windows.Forms.Label();
             this.Replicas = new System.Windows.Forms.Label();
             this.tabPage_sim_simple_reportes = new System.Windows.Forms.TabPage();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
+            this.label8 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
+            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
             this.groupBox_grupos = new System.Windows.Forms.GroupBox();
             this.checkBoxg9_hub = new System.Windows.Forms.CheckBox();
             this.checkBoxg2_negocio = new System.Windows.Forms.CheckBox();
@@ -94,11 +99,7 @@
             this.folderBrowserDialogOutput = new System.Windows.Forms.FolderBrowserDialog();
             this.label_msg = new System.Windows.Forms.Label();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.dateTimePicker1 = new System.Windows.Forms.DateTimePicker();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.dateTimePicker2 = new System.Windows.Forms.DateTimePicker();
+            this.button1 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabPage_sim_simple_params.SuspendLayout();
             this.groupBox_turnos.SuspendLayout();
@@ -106,12 +107,12 @@
             this.groupBox_recovery.SuspendLayout();
             this.groupBox_sim.SuspendLayout();
             this.tabPage_sim_simple_reportes.SuspendLayout();
+            this.groupBox1.SuspendLayout();
             this.groupBox_grupos.SuspendLayout();
             this.groupBox_reportes.SuspendLayout();
             this.groupBox_directorio.SuspendLayout();
             this.groupBox_estandares.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
-            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -469,6 +470,59 @@
             this.tabPage_sim_simple_reportes.TabIndex = 1;
             this.tabPage_sim_simple_reportes.Text = "Reportes";
             this.tabPage_sim_simple_reportes.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.dateTimePicker2);
+            this.groupBox1.Controls.Add(this.label8);
+            this.groupBox1.Controls.Add(this.label7);
+            this.groupBox1.Controls.Add(this.dateTimePicker1);
+            this.groupBox1.Location = new System.Drawing.Point(356, 154);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(190, 82);
+            this.groupBox1.TabIndex = 4;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Fechas";
+            // 
+            // dateTimePicker2
+            // 
+            this.dateTimePicker2.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dateTimePicker2.Location = new System.Drawing.Point(68, 51);
+            this.dateTimePicker2.Name = "dateTimePicker2";
+            this.dateTimePicker2.Size = new System.Drawing.Size(110, 20);
+            this.dateTimePicker2.TabIndex = 3;
+            this.toolTip1.SetToolTip(this.dateTimePicker2, "Fecha de término desde la cual se considera información en los reportes (inclusiv" +
+                    "e).");
+            this.dateTimePicker2.ValueChanged += new System.EventHandler(this.ValidarFechaTermino);
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(6, 57);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(45, 13);
+            this.label8.TabIndex = 2;
+            this.label8.Text = "Término";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(6, 26);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(32, 13);
+            this.label7.TabIndex = 1;
+            this.label7.Text = "Inicio";
+            // 
+            // dateTimePicker1
+            // 
+            this.dateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dateTimePicker1.Location = new System.Drawing.Point(68, 19);
+            this.dateTimePicker1.Name = "dateTimePicker1";
+            this.dateTimePicker1.Size = new System.Drawing.Size(110, 20);
+            this.dateTimePicker1.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.dateTimePicker1, "Fecha de inicio desde la cual se considera información en los reportes (inclusive" +
+                    ").");
+            this.dateTimePicker1.ValueChanged += new System.EventHandler(this.ValidarFechaInicio);
             // 
             // groupBox_grupos
             // 
@@ -949,64 +1003,22 @@
             this.label_msg.Size = new System.Drawing.Size(0, 13);
             this.label_msg.TabIndex = 10;
             // 
-            // groupBox1
+            // button1
             // 
-            this.groupBox1.Controls.Add(this.dateTimePicker2);
-            this.groupBox1.Controls.Add(this.label8);
-            this.groupBox1.Controls.Add(this.label7);
-            this.groupBox1.Controls.Add(this.dateTimePicker1);
-            this.groupBox1.Location = new System.Drawing.Point(356, 154);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(190, 82);
-            this.groupBox1.TabIndex = 4;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Fechas";
-            // 
-            // dateTimePicker1
-            // 
-            this.dateTimePicker1.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dateTimePicker1.Location = new System.Drawing.Point(68, 19);
-            this.dateTimePicker1.Name = "dateTimePicker1";
-            this.dateTimePicker1.Size = new System.Drawing.Size(110, 20);
-            this.dateTimePicker1.TabIndex = 0;
-            this.toolTip1.SetToolTip(this.dateTimePicker1, "Fecha de inicio desde la cual se considera información en los reportes (inclusive" +
-                    ").");
-            this.dateTimePicker1.ValueChanged += new System.EventHandler(this.ValidarFechaInicio);
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(6, 26);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(32, 13);
-            this.label7.TabIndex = 1;
-            this.label7.Text = "Inicio";
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 57);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(45, 13);
-            this.label8.TabIndex = 2;
-            this.label8.Text = "Término";
-            // 
-            // dateTimePicker2
-            // 
-            this.dateTimePicker2.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dateTimePicker2.Location = new System.Drawing.Point(68, 51);
-            this.dateTimePicker2.Name = "dateTimePicker2";
-            this.dateTimePicker2.Size = new System.Drawing.Size(110, 20);
-            this.dateTimePicker2.TabIndex = 3;
-            this.toolTip1.SetToolTip(this.dateTimePicker2, "Fecha de término desde la cual se considera información en los reportes (inclusiv" +
-                    "e).");
-            this.dateTimePicker2.ValueChanged += new System.EventHandler(this.ValidarFechaTermino);
+            this.button1.Location = new System.Drawing.Point(16, 445);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 11;
+            this.button1.Text = "Optimizar";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.OptimizarClick);
             // 
             // MenuSimulacionNormal
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(584, 562);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.label_msg);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.labelBarra);
@@ -1030,6 +1042,8 @@
             this.groupBox_sim.ResumeLayout(false);
             this.groupBox_sim.PerformLayout();
             this.tabPage_sim_simple_reportes.ResumeLayout(false);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.groupBox_grupos.ResumeLayout(false);
             this.groupBox_grupos.PerformLayout();
             this.groupBox_reportes.ResumeLayout(false);
@@ -1039,8 +1053,6 @@
             this.groupBox_estandares.ResumeLayout(false);
             this.groupBox_estandares.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1117,5 +1129,6 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.DateTimePicker dateTimePicker1;
+        private System.Windows.Forms.Button button1;
     }
 }

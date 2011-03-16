@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace InterfazSimuLAN.Reportes
+namespace SimuLAN.Utils
 {
     /// <summary>
     /// Estructura que almacena estadísticas de puntualidad

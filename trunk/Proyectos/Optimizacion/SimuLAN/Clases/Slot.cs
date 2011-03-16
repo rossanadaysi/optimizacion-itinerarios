@@ -292,7 +292,7 @@ namespace SimuLAN.Clases
                 this._t_ini = 0;
                 this._t_fin = siguiente.TInicialProg;
                 this._duracion = _t_fin - _t_ini;
-                this.TurnAroundMinimo = siguiente.GetTurnAroundMin(siguiente);
+                this.TurnAroundMinimo = siguiente.GetTurnAroundMinimo(siguiente);
             }
 
             else if (previo!=null && siguiente==null)
@@ -314,7 +314,7 @@ namespace SimuLAN.Clases
                 this._t_ini = previo.TFinalProg;
                 this._t_fin = siguiente.TInicialProg;
                 this._duracion = _t_fin - _t_ini;
-                this.TurnAroundMinimo = siguiente.GetTurnAroundMin(siguiente);
+                this.TurnAroundMinimo = siguiente.GetTurnAroundMinimo(siguiente);
             }
 
         }

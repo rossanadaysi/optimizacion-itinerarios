@@ -8,6 +8,7 @@ using NPOI.POIFS.FileSystem;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using SimuLAN.Clases.Recovery;
+using SimuLAN.Utils;
 
 namespace InterfazSimuLAN.Reportes
 {

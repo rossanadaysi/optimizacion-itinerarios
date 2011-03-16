@@ -5,6 +5,7 @@ using System.IO;
 using System.Xml.Serialization;
 using SimuLAN.Utils;
 using SimuLAN.Clases.Recovery;
+using SimuLAN.Clases.Optimizacion;
 
 
 namespace SimuLAN.Clases
@@ -607,6 +608,20 @@ namespace SimuLAN.Clases
             LlenarTramosDictionary(itinerarioClonado);
             itinerarioClonado.CargarSlots();
             return itinerarioClonado;
+        }
+
+
+        /// <summary>
+        /// Construye conexiones de pasajeros y de pairings
+        /// </summary>
+        public void CrearConexiones(ParametrosSimuLAN parametros)
+        {
+            Conexiones_Lista.Clear();
+            ConexionPairing.TIEMPO_CAMBIO_AVION = parametros.Escalares.MinPairing;
+            ConexionPairing.TIEMPO_MAXIMO_PAIRING = parametros.Escalares.MaxPairing;
+            CrearConexionesPairing(parametros.Conexiones.Pairings);
+            CrearConexionesPasajeros(parametros.Conexiones.PaxConex, parametros.Conexiones.Hubs, parametros.Escalares.Semilla);
+            CargarDelegatesEnConexiones(parametros.Conexiones.ControladorConexionesPax.GetMinutosEsperaPax);
         }
 
         /// <summary>
@@ -1267,5 +1282,27 @@ namespace SimuLAN.Clases
         }
         
         #endregion
+
+        internal void AplicarCambiosEnTiemposProgramados(Dictionary<string, List<InfoTramoParaOptimizacion>> tramos_por_avion)
+        {
+            foreach (string avion in this._aviones_dictionary.Keys)
+            {
+                foreach (Tramo t in this._aviones_dictionary[avion].Legs)
+                {
+                    InfoTramoParaOptimizacion infoParaOptimizacion = tramos_por_avion[avion].Find(delegate(InfoTramoParaOptimizacion e)
+                    {
+                        return e.IdTramo == t.TramoBase.Numero_Global;
+                    });
+                    if (infoParaOptimizacion != null)
+                    {
+                        t.ReprogramarTramo(infoParaOptimizacion.VariacionAplicadaResultante);
+                    }
+                    else
+                    {
+                        throw new Exception("Tramo no encontrado en itinerario");
+                    }
+                }
+            }
+        }
     }
 }

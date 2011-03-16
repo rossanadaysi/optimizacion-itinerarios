@@ -298,7 +298,7 @@ namespace SimuLAN.Clases
         /// Delegado que encapsula el método para obtener el turn around mínimo correspondiente al origen del tramo
         /// </summary>
         [XmlIgnore]
-        public GetTurnAroundMinEventHandler GetTurnAroundMin
+        public GetTurnAroundMinEventHandler GetTurnAroundMinimo
         {
             get { return _get_turn_around_min; }
             set { _get_turn_around_min = value; }
@@ -449,6 +449,81 @@ namespace SimuLAN.Clases
             get { return this.DtIniProg.AddMinutes(this.TInicialRst - this.TInicialProg).Month; }
         }
 
+
+        public int HolguraAtras
+        {
+            get
+            {
+                if (this.Tramo_Previo != null)
+                {
+                    if (this.Tramo_Previo._mantenimiento_posterior != null)
+                    {
+                        return this.TInicialProg - this.Tramo_Previo.TFinalProg - this.Tramo_Previo._mantenimiento_posterior.Duracion;
+                    }
+                    else
+                    {
+                        return this.TInicialProg - this.Tramo_Previo.TFinalProg;
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public int HolguraDelante
+        {
+            get 
+            {
+                if (this.Tramo_Siguiente != null)
+                {
+                    if (_mantenimiento_posterior != null)
+                    {
+                        return this.Tramo_Siguiente.TInicialProg - this.TFinalProg - _mantenimiento_posterior.Duracion;
+                    }
+                    else
+                    {
+                        return this.Tramo_Siguiente.TInicialProg - this.TFinalProg;
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public int MinutosMaximaVariacionDelante
+        {
+            get 
+            {
+                if (this.Tramo_Siguiente != null)
+                {
+                    return HolguraDelante - this.GetTurnAroundMinimo(this.Tramo_Siguiente);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+        public int MinutosMaximaVariacionAtras
+        {
+            get
+            {
+                if (this.Tramo_Previo != null)
+                {
+                    return HolguraAtras - this.GetTurnAroundMinimo(this);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+
         /// <summary>
         /// Indica el negocio o ruta comercial al que pertenece el tramo
         /// </summary>
@@ -500,7 +575,7 @@ namespace SimuLAN.Clases
         {
             get
             {
-                return Math.Max(_t_inicial_prog, TFinRstTramoPrevio + GetTurnAroundMin(this));
+                return Math.Max(_t_inicial_prog, TFinRstTramoPrevio + GetTurnAroundMinimo(this));
             }
         }
 
@@ -536,7 +611,7 @@ namespace SimuLAN.Clases
                 }
                 else
                 {
-                    return Tramo_Previo.TInicialProg + this.GetTurnAroundMin(this);
+                    return Tramo_Previo.TInicialProg + this.GetTurnAroundMinimo(this);
                 }
             }    
         }
@@ -794,7 +869,7 @@ namespace SimuLAN.Clases
                             sumaAtrasos += tramoAuxPrevio.CausasAtraso[c];
                         }
                         int atrasoRealEstimado = Math.Max(sumaAtrasos, tramoAuxPrevio.TInicialRst - tramoAuxPrevio.TInicialProg);
-                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMin(this) - this.TInicialRst);
+                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMinimo(this) - this.TInicialRst);
                         tiempoInicialTramo += atrasoPropagado;
                     }
                 }
@@ -844,7 +919,7 @@ namespace SimuLAN.Clases
                             sumaAtrasos += tramoAuxPrevio.CausasAtraso[c];
                         }
                         int atrasoRealEstimado = Math.Max(sumaAtrasos, tramoAuxPrevio.TInicialRst - tramoAuxPrevio.TInicialProg);
-                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMin(this) - this.TInicialRst);
+                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMinimo(this) - this.TInicialRst);
                         tiempoFinalTramo += atrasoPropagado;
                     }
                 }
@@ -1101,5 +1176,30 @@ namespace SimuLAN.Clases
         }
         
         #endregion
+
+        internal void ReprogramarTramo(int movimiento)
+        {
+            if (movimiento > 0)
+            {
+                if (movimiento > HolguraDelante)
+                {
+                    movimiento = HolguraDelante;
+                }
+            }
+            else
+            {
+                if (-movimiento > HolguraAtras)
+                {
+                    movimiento = -HolguraAtras;
+                }
+            }
+            if (movimiento != 0)
+            {
+                _t_final_prog += movimiento;
+                _t_final_rst += movimiento;
+                _t_inicial_prog += movimiento;
+                _t_inicial_rst += movimiento;
+            }
+        }
     }
 }

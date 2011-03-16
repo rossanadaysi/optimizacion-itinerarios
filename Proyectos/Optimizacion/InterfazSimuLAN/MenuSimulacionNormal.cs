@@ -38,6 +38,15 @@ namespace InterfazSimuLAN
         /// </summary>
         private Thread _thead_simulacion;
 
+
+        public CambiarVistaSimularEventHandler GetCambiarVistaSimulacion
+        {
+            get { return new CambiarVistaSimularEventHandler(this.CambiarVistaSimulacion); }
+        }
+        public ActualizarPorcentajeEventHandler GetActualizarPorcentaje
+        {
+            get { return new ActualizarPorcentajeEventHandler(this.ActualizarPorcentaje); }
+        }
         #endregion
 
         #region PROPERTIES
@@ -87,7 +96,7 @@ namespace InterfazSimuLAN
             InitializeComponent();
             this._main = main;
             Inicializar();
-            _enviar_mensaje = new EnviarMensajeEventHandler(EnviarMensajeLabelMensajes);
+            this._enviar_mensaje = new EnviarMensajeEventHandler(EnviarMensajeLabelMensajes);
         }
 
         #endregion
@@ -109,6 +118,15 @@ namespace InterfazSimuLAN
         /// </summary>
         /// <param name="s">String con el porcentaje actual</param>
         internal void ActualizarPorcentaje(string s)
+        {
+            this.Invoke(new ActualizarPorcentajeEventHandler(ActualizarPorcentaje2), s);
+
+        }
+        /// <summary>
+        /// Actualiza el porcentaje de progreso de la simulación
+        /// </summary>
+        /// <param name="s">String con el porcentaje actual</param>
+        internal void ActualizarPorcentaje2(string s)
         {
             labelBarra.Text = s;
             labelBarra.Refresh();
@@ -154,8 +172,13 @@ namespace InterfazSimuLAN
         /// Cambia la vista del form dependiendo si se está en proceso de simulación o no.
         /// </summary>
         /// <param name="cursor">Tipo de cursor seteado</param>
-        internal void CambiarVistaSimulacion(Cursor cursor)
+        internal void CambiarVistaSimulacion()
         {
+            this.Invoke(new CambiarVistaSimularEventHandler(CambiarVistaSimulacion2));
+        }
+
+        private void CambiarVistaSimulacion2()
+        {           
             this.pictureBox1.Visible = !this.pictureBox1.Visible;
             this.labelBarra.Visible = !this.labelBarra.Visible;
             this.ribbonMenuButton_simular.Visible = !this.labelBarra.Visible;
@@ -165,8 +188,17 @@ namespace InterfazSimuLAN
             this.groupBox_sim.Enabled = !this.groupBox_sim.Enabled;
             this.groupBox_turnos.Enabled = !this.groupBox_turnos.Enabled;
             this.groupBox_estandares.Enabled = !this.groupBox_estandares.Enabled;
-            this.Cursor = (Cursor)cursor;
-            this._main.Cursor = (Cursor)cursor;
+            Cursor actual = this._main.Cursor;
+            if (actual == Cursors.Default)
+            {
+                this.Cursor = Cursors.WaitCursor;
+                this._main.Cursor = Cursors.WaitCursor;
+            }
+            else
+            {
+                this.Cursor = Cursors.Default;
+                this._main.Cursor = Cursors.Default;
+            }            
         }
 
         /// <summary>
@@ -416,6 +448,17 @@ namespace InterfazSimuLAN
             this.Bounds = r;
         }
 
+        private void OptimizarClick(object sender, EventArgs e)
+        {
+            _main._modeloDisrupcionesBase.MapDisrupcionesEscenario[TipoDisrupcion.METEREOLOGIA] = (TipoEscenarioDisrupcion)comboBox_esc_wxs.SelectedItem;
+            _main._modeloDisrupcionesBase.MapDisrupcionesEscenario[TipoDisrupcion.MANTENIMIENTO] = (TipoEscenarioDisrupcion)comboBox_esc_mantto.SelectedItem;
+            _main._config.ReplaceSetting("output_dir", folderBrowserDialogOutput.SelectedPath);
+            _main._outputPath = folderBrowserDialogOutput.SelectedPath;
+            _main.SetMensajeSimulacion = _enviar_mensaje;
+            _thead_simulacion = new Thread(new ThreadStart(_main.Optimizar));
+            _thead_simulacion.Start();
+        }
+
         /// <summary>
         /// Método de acción al presionar boton de seleccionar carpera de output.
         /// Se abre diálogo de selección de carpetas y se actualzia string de path.
@@ -446,6 +489,7 @@ namespace InterfazSimuLAN
             _thead_simulacion = new Thread(new ThreadStart(_main.SimularNormal));
             _thead_simulacion.Start();
         }
+
 
         /// <summary>
         /// Valida que la fecha de inicio no sea mayor que la fecha de término. Si lo es, por defecto setea su el valor en el mínimo.
@@ -522,6 +566,8 @@ namespace InterfazSimuLAN
         }
 
         #endregion
+
+       
 
     }
 }

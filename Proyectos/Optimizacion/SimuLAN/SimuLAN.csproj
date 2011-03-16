@@ -88,6 +88,10 @@
     <Compile Include="Clases\Disrupciones\InfoDisrupcion.cs" />
     <Compile Include="Clases\Disrupciones\InfoDisrupcion3D.cs" />
     <Compile Include="Clases\Disrupciones\ModeloDisrupciones.cs" />
+    <Compile Include="Clases\Optimizacion\ExplicacionImpuntualidad.cs" />
+    <Compile Include="Clases\Optimizacion\InfoTramoParaOptimizacion.cs" />
+    <Compile Include="Clases\Optimizacion\Optimizador.cs" />
+    <Compile Include="Clases\Optimizacion\OrganizadorTramos.cs" />
     <Compile Include="Clases\ParametrosEscalares.cs" />
     <Compile Include="Clases\Recovery\ControladorBackups.cs" />
     <Compile Include="Clases\Recovery\SlotBackup.cs" />
@@ -96,6 +100,7 @@
     <Compile Include="Clases\TramoBase.cs" />
     <Compile Include="Clases\Conexiones\ControladorConexionesPax.cs" />
     <Compile Include="Clases\Recovery\UnidadBackup.cs" />
+    <Compile Include="Clases\ManagerSimulacion.cs" />
     <Compile Include="Utils\BinaryHeap.cs" />
     <Compile Include="Clases\Tramo.cs" />
     <Compile Include="Clases\Evento.cs" />
@@ -126,6 +131,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Clases\Simulacion.cs" />
+    <Compile Include="Utils\EstadisticosGenerales.cs" />
     <Compile Include="Utils\SerializableDictionary.cs" />
     <Compile Include="Utils\SerializableDictionaryWithHeaders.cs" />
     <Compile Include="Utils\SerializableList.cs" />

@@ -453,7 +453,7 @@ namespace SimuLAN.Clases.Recovery
         {
             int temp_minutos_ganancia_ini = 0;
             int minutos_atraso_reaccionario_restante = 0;
-            int turn_around_min_tramo_ini_base = tramo_base.GetTurnAroundMin(tramo_base);
+            int turn_around_min_tramo_ini_base = tramo_base.GetTurnAroundMinimo(tramo_base);
             
             int tiempo_inicio_sin_swap_tramo_ini_cadena = tramo_inicial_cadena_movida.TInicialRst + min_atraso_reaccionario_ini;
 
@@ -462,7 +462,7 @@ namespace SimuLAN.Clases.Recovery
             {
                 if (busquedaPorConexion)
                 {
-                    int turn_around_min_tramo_ini_cadena_movida = tramo_inicial_cadena_movida.GetTurnAroundMin(tramo_inicial_cadena_movida);
+                    int turn_around_min_tramo_ini_cadena_movida = tramo_inicial_cadena_movida.GetTurnAroundMinimo(tramo_inicial_cadena_movida);
                     int tiempo_inicio_tramo_ini_sin_conexion =  Math.Max(tramo_inicial_cadena_movida.TInicialProg, tramo_inicial_cadena_movida.TFinRstTramoPrevio + turn_around_min_tramo_ini_cadena_movida);
                     temp_minutos_ganancia_ini = Math.Max(tiempo_inicio_sin_swap_tramo_ini_cadena - tiempo_inicio_tramo_ini_sin_conexion, 0);
                 }
@@ -530,7 +530,7 @@ namespace SimuLAN.Clases.Recovery
                 //Se setea tramo revisado
                 temp_tramo = temp_tramo.Tramo_Siguiente;
                 //Se setea T/A de tramo revisado
-                int turn_around_tramo_temp = temp_tramo.GetTurnAroundMin(temp_tramo);
+                int turn_around_tramo_temp = temp_tramo.GetTurnAroundMinimo(temp_tramo);
                 //Se setea minutos de holgura del tramo temporal.
                 int minutos_holgura_tramo_temp = temp_tramo.TInicialRst - temp_tramo.Tramo_Previo.TFinalRst - turn_around_tramo_temp;
                 //Minutos de ganancia inicial son reducidos en función de la holgura observada.
@@ -564,7 +564,7 @@ namespace SimuLAN.Clases.Recovery
                 int temp_minutos_perdida_ini = 0;
                 if(busquedaPorConexion)
                 {    
-                    turn_around_tramo_temp_receptor = tramo_inicial_posterior_afectado.GetTurnAroundMin(tramo_inicial_posterior_afectado);
+                    turn_around_tramo_temp_receptor = tramo_inicial_posterior_afectado.GetTurnAroundMinimo(tramo_inicial_posterior_afectado);
                     temp_minutos_perdida_ini = Math.Max(tramo_final_cadena_recibida.TFinalRst + turn_around_tramo_temp_receptor - tramo_inicial_posterior_afectado.TInicialRst, 0);
                 }
                 else
@@ -599,7 +599,7 @@ namespace SimuLAN.Clases.Recovery
                     //Se actualizan minutos de atraso propagados
                     if (tramo_inicial_posterior_afectado != null)
                     {
-                        temp_minutos_perdida_ini -= Math.Max(tramo_inicial_posterior_afectado.TInicialRst - (tramo_inicial_posterior_afectado.Tramo_Previo.TFinalRst + tramo_inicial_posterior_afectado.GetTurnAroundMin(tramo_inicial_posterior_afectado)), 0);
+                        temp_minutos_perdida_ini -= Math.Max(tramo_inicial_posterior_afectado.TInicialRst - (tramo_inicial_posterior_afectado.Tramo_Previo.TFinalRst + tramo_inicial_posterior_afectado.GetTurnAroundMinimo(tramo_inicial_posterior_afectado)), 0);
                     }
                     else
                     {
@@ -629,11 +629,11 @@ namespace SimuLAN.Clases.Recovery
             Tramo tramo = _tramo_fin_emisor.Tramo_Siguiente;
             if (tramo != null)
             {
-                return tramo.TInicialProg - tramo.GetTurnAroundMin(tramo);
+                return tramo.TInicialProg - tramo.GetTurnAroundMinimo(tramo);
             }
             else
             {
-                return _tramo_fin_emisor.TFinalProg + _tramo_fin_emisor.GetTurnAroundMin(_tramo_fin_emisor);
+                return _tramo_fin_emisor.TFinalProg + _tramo_fin_emisor.GetTurnAroundMinimo(_tramo_fin_emisor);
             }
         }        
 
@@ -1003,19 +1003,19 @@ namespace SimuLAN.Clases.Recovery
             {
                 tiempo_inicio_uso_backup = _tramo_fin_emisor.TFinalRst;//Tiempo fin de cadena receptor recuperado 
                 int reaccionario_tramo_final = _minutos_atraso_reaccionario_inicial;
-                int atraso_recuperado = _minutos_atraso_reaccionario_inicial + _tramo_ini_emisor.TInicialRst - Math.Max(_tramo_ini_emisor.TInicialProg, _tramo_ini_receptor.TFinRstTramoPrevio + _tramo_ini_receptor.GetTurnAroundMin(_tramo_ini_receptor));
+                int atraso_recuperado = _minutos_atraso_reaccionario_inicial + _tramo_ini_emisor.TInicialRst - Math.Max(_tramo_ini_emisor.TInicialProg, _tramo_ini_receptor.TFinRstTramoPrevio + _tramo_ini_receptor.GetTurnAroundMinimo(_tramo_ini_receptor));
                 int holgura = 0;
                 Tramo tramoAux = _tramo_ini_emisor;
                 while (tramoAux != _tramo_fin_emisor)
                 {
-                    holgura += tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.TFinalRst + tramoAux.Tramo_Siguiente.GetTurnAroundMin(tramoAux.Tramo_Siguiente);
+                    holgura += tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.TFinalRst + tramoAux.Tramo_Siguiente.GetTurnAroundMinimo(tramoAux.Tramo_Siguiente);
                     tramoAux = tramoAux.Tramo_Siguiente;
                 }
                 tiempo_corte_backup = _tramo_fin_emisor.TFinalRst + Math.Max(0, reaccionario_tramo_final - holgura);//Tiempo fin de cadena receptor sin recuperar
             }
             else if (this._tipo_uso_backup == UsoBackup.FinEmisor)
             {
-                int atraso_recuperado = _tramo_ini_receptor.TInicialRst - Math.Max(_tramo_ini_receptor.TInicialProg, _tramo_ini_emisor.TFinRstTramoPrevio + _tramo_ini_emisor.GetTurnAroundMin(_tramo_ini_emisor));
+                int atraso_recuperado = _tramo_ini_receptor.TInicialRst - Math.Max(_tramo_ini_receptor.TInicialProg, _tramo_ini_emisor.TFinRstTramoPrevio + _tramo_ini_emisor.GetTurnAroundMinimo(_tramo_ini_emisor));
                 tiempo_inicio_uso_backup = _tramo_fin_receptor.TFinalRst - atraso_recuperado;//Tiempo fin de cadena emisor recuperado 
                 tiempo_corte_backup = _tramo_fin_receptor.TFinalRst;//Tiempo fin de cadena emisor sin recuperar
             }

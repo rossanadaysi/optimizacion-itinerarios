@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using SimuLAN.Clases;
+using SimuLAN.Utils;
 
 namespace InterfazSimuLAN.Reportes
 {

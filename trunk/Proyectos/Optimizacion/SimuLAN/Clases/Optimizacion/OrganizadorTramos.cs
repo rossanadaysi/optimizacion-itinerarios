@@ -119,11 +119,12 @@ namespace SimuLAN.Clases.Optimizacion
             {
                 _tramos_por_avion.Add(a.IdAvion, new List<InfoTramoParaOptimizacion>());
                 Tramo aux = a.Tramo_Raiz;
+                InfoTramoParaOptimizacion tramo_previo = null ;
                 while (aux != null)
                 {
-                    int id = aux.TramoBase.Numero_Global;
-                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(id, aux.MinutosMaximaVariacionAtras, aux.MinutosMaximaVariacionDelante);
-                    _tramos.Add(id,tramo_new);
+                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(aux, tramo_previo);
+                    tramo_previo = tramo_new;
+                    _tramos.Add(tramo_new.IdTramo, tramo_new);
                     _tramos_por_avion[a.IdAvion].Add(tramo_new);
                     aux = aux.Tramo_Siguiente;
                 }
@@ -206,11 +207,11 @@ namespace SimuLAN.Clases.Optimizacion
 
         internal int CompararTramosSegunReaccionario(InfoTramoParaOptimizacion t1, InfoTramoParaOptimizacion t2)
         {
-            if (t1.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios > t2.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios)
+            if (t1.ComparadorPrioridadOptimizacionRazonReaccionarios > t2.ComparadorPrioridadOptimizacionRazonReaccionarios)
             {
                 return 1;
             }
-            else if (t1.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios < t2.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios)
+            else if (t1.ComparadorPrioridadOptimizacionRazonReaccionarios < t2.ComparadorPrioridadOptimizacionRazonReaccionarios)
             {
                 return -1;
             }
@@ -262,23 +263,42 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        internal void OptimizarVariacionesReaccionarios()
+        internal void OptimizarVariacionesReaccionarios(out int variaciones, out int cambios_deshechos, out int tramos_cerrados)
         {
             //Ordena tramo en avión según atraso reaccionario
-            int salto_variaciones = 5;
+            int salto_variaciones = 15;
+            variaciones = 0;
+            cambios_deshechos = 0;
+            tramos_cerrados = 0;
             this.OrdernarTramoSegunReaccionarios();
             foreach (string avion in this.TramosPorAvion.Keys)
             {
 
                 foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
                 {
-                    if (infoTramo.ExplicacionImpuntualidadBase.TieneAtrasoReaccionario)
+                    if (infoTramo.Optimizable)
                     {
                         bool convieneOptimizar = infoTramo.ConvieneOptimizar();
                         if (convieneOptimizar)
                         {
                             //Genera variaciones en tramos
-                            infoTramo.IncrementarVariacionMasAplicada(salto_variaciones);
+                            if (infoTramo.ExplicacionImpuntualidadActual.RazonReaccionarios > 0.3)
+                            {
+                                infoTramo.IncrementarVariacionMasAplicada(salto_variaciones);
+                            }
+                            else
+                            {
+                                infoTramo.IncrementarVariacionMenosAplicada(salto_variaciones);
+                            }
+                            variaciones++;
+                        }
+                        else
+                        {
+                            cambios_deshechos++;
+                            tramos_cerrados++;
+                            infoTramo.IncrementarVariacionMasAplicada(-salto_variaciones);
+                            infoTramo.IncrementarVariacionMenosAplicada(-salto_variaciones);
+                            //infoTramo.TramoAbierto = false;
                         }
                     }
                 }

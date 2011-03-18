@@ -463,6 +463,11 @@ namespace InterfazSimuLAN
             _simulando = true;
             actualizarPorcentaje = this._menuSimulacionNormal.GetActualizarPorcentaje;
             cambiarVista = this._menuSimulacionNormal.GetCambiarVistaSimulacion;
+            cambiarVista();
+            foreach (Avion a in _itinerarioBase.AvionesDictionary.Values)
+            {
+                _itinerarioBase.CargarDelegadosAvionesTramos(a);
+            }
             Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, 15, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
             optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada);
             
@@ -3437,8 +3442,7 @@ namespace InterfazSimuLAN
             {
                 Button_multi_sim.Visible = false;
                 Button_Simular_Normal.Visible = false;
-                _OK_Parametros = false;
-                
+                _OK_Parametros = false;                
             }
             finally
             {

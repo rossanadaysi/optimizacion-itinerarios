@@ -581,20 +581,8 @@ namespace SimuLAN.Clases
                     clonado.PrimerSlotEsMantenimiento = true;
                     clonado.SlotsMantenimiento.Add(av.SlotsMantenimiento[0].Clonar());
                 }
-                clonado.GetAeropuerto = itinerarioClonado._get_aeropuerto;
-                clonado.GetFlota = itinerarioClonado._get_flota;
-                clonado.GetBackups = itinerarioClonado._get_backups;
-                clonado.UsarTurnoBackupProp = itinerarioClonado._usar_turno_backup;
-                Tramo aux = clonado.Tramo_Raiz;
-                while (aux != null)
-                {
-                    aux.GetAvion = itinerarioClonado._get_avion;
-                    aux.GetConexion = itinerarioClonado._get_conexion;
-                    aux.GetMinutosProximoVuelo = itinerarioClonado._get_minutos_proximo_vuelo;
-                    if (aux.MantenimientoPosterior != null)
-                        clonado.SlotsMantenimiento.Add(aux.MantenimientoPosterior);
-                    aux = aux.Tramo_Siguiente;
-                }                
+                itinerarioClonado.CargarDelegadosAvionesTramos(clonado);
+                              
                 itinerarioClonado.AvionesDictionary.Add(clonado.IdAvion.ToString(), clonado);                
             }
             foreach (UnidadBackup bu in _controlador_backups.BackupsLista)
@@ -608,6 +596,24 @@ namespace SimuLAN.Clases
             LlenarTramosDictionary(itinerarioClonado);
             itinerarioClonado.CargarSlots();
             return itinerarioClonado;
+        }
+
+        public void CargarDelegadosAvionesTramos(Avion a)
+        {
+            a.GetAeropuerto = this._get_aeropuerto;
+            a.GetFlota = this._get_flota;
+            a.GetBackups = this._get_backups;
+            a.UsarTurnoBackupProp = this._usar_turno_backup;
+            Tramo aux = a.Tramo_Raiz;
+            while (aux != null)
+            {
+                aux.GetAvion = this._get_avion;
+                aux.GetConexion = this._get_conexion;
+                aux.GetMinutosProximoVuelo = this._get_minutos_proximo_vuelo;
+                if (aux.MantenimientoPosterior != null)
+                    a.SlotsMantenimiento.Add(aux.MantenimientoPosterior);
+                aux = aux.Tramo_Siguiente;
+            }  
         }
 
 

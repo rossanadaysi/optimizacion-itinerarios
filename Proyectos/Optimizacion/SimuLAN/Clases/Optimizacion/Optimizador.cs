@@ -24,9 +24,7 @@ namespace SimuLAN.Clases.Optimizacion
 
         public ParametrosSimuLAN Parametros { get; set; }
 
-        public ModeloDisrupciones Disrupciones { get; set; }
-
-        
+        public ModeloDisrupciones Disrupciones { get; set; }        
 
         public Optimizador(Itinerario itinerario_base,ParametrosSimuLAN parametros, ModeloDisrupciones disrupciones, int std, DateTime fechaIni, DateTime fechaFin)
         {
@@ -60,8 +58,7 @@ namespace SimuLAN.Clases.Optimizacion
             List<int> stds = new List<int>();
             stds.Add(_std);
             //Optimizacion inicial
-            enviarMensaje("Generando simulación base");
-            cambiarVista();
+            enviarMensaje("Generando simulación base");            
             ManagerSimulacion manager = new ManagerSimulacion(ItinerarioBase, Parametros, Disrupciones, stds, _fecha_ini, _fecha_fin, enviarMensaje, actualizarPorcentaje, ref optimizacionCancelada);            
             List<Simulacion> replicasBase = manager.SimularNormal();
             Dictionary<int,ExplicacionImpuntualidad> impuntualidades_base = _tramos_optimizacion.EstimarImpuntualidades(replicasBase, _fecha_ini, _fecha_fin, _std);
@@ -70,10 +67,11 @@ namespace SimuLAN.Clases.Optimizacion
             this._historial_puntualidades.Add(iteraciones, impuntualidades_base);
             while (iteraciones < 10)
             {
-                this._tramos_optimizacion.OptimizarVariacionesReaccionarios();
+                int variaciones, cambios_deshechos, tramos_cerrados;
+                this._tramos_optimizacion.OptimizarVariacionesReaccionarios(out variaciones, out cambios_deshechos, out tramos_cerrados);
                 //Aplica variaciones en itinerario (siempre que no viole restricciones)
                 manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
-                enviarMensaje("Optimización número: " + iteraciones);
+                enviarMensaje("Optimización número: " + iteraciones + ", variaciones: " + variaciones + ", tramos cerrados: " + tramos_cerrados);
                 List<Simulacion> replicas = manager.SimularNormal();
                 Dictionary<int, ExplicacionImpuntualidad> impuntualidades = _tramos_optimizacion.EstimarImpuntualidades(replicas, _fecha_ini, _fecha_fin, _std);
                 this._tramos_optimizacion.CargarImpuntualidadesIteraciones(impuntualidades);
@@ -86,8 +84,7 @@ namespace SimuLAN.Clases.Optimizacion
 
             //Con LTFM, iterar:
                 //Llevar al máximo las variaciones desde el primer tramo al último de cada avión, de manera que se minimice el atraso reaccionario. Los sin reaccionario, se adelantan, y los con reaccionario, se retrasan.
-            ExportarHistorialPuntualidades(@"C:\Users\Rodolfo\Desktop\AnalisisSimuLAN\" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
-            cambiarVista();
+            ExportarHistorialPuntualidades(@"C:\Users\Rodolfo\Desktop\AnalisisSimuLAN\" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");            
         }
     
         internal void ExportarHistorialPuntualidades(string dir)

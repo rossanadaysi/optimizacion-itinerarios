@@ -454,15 +454,37 @@ namespace SimuLAN.Clases
         {
             get
             {
+
                 if (this.Tramo_Previo != null)
                 {
+                    List<int> arrivos_programados = new List<int>();
+                    arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
+                    SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, true);
+                    SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, true);
+                    if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
+                    {
+                        foreach (ConexionLegs c in conexiones_pairing_previas)
+                        {
+                            int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
+                            arrivos_programados.Add(arrivo_prog);
+                        }
+                    }
+                    if (conexiones_pax_previas != null && conexiones_pax_previas.Count > 0)
+                    {
+                        foreach (ConexionLegs c in conexiones_pax_previas)
+                        {
+                            int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
+                            arrivos_programados.Add(arrivo_prog);
+                        }
+                    }
+                    arrivos_programados.Sort();
                     if (this.Tramo_Previo._mantenimiento_posterior != null)
                     {
-                        return this.TInicialProg - this.Tramo_Previo.TFinalProg - this.Tramo_Previo._mantenimiento_posterior.Duracion;
+                        return this.TInicialProg - arrivos_programados[arrivos_programados.Count - 1] - this.Tramo_Previo._mantenimiento_posterior.Duracion;
                     }
                     else
                     {
-                        return this.TInicialProg - this.Tramo_Previo.TFinalProg;
+                        return this.TInicialProg - arrivos_programados[arrivos_programados.Count - 1];
                     }
                 }
                 else
@@ -478,13 +500,35 @@ namespace SimuLAN.Clases
             {
                 if (this.Tramo_Siguiente != null)
                 {
-                    if (_mantenimiento_posterior != null)
+                    List<int> inicios_programados = new List<int>();
+                    inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
+                    SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, false);
+                    SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, false);
+                    if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
                     {
-                        return this.Tramo_Siguiente.TInicialProg - this.TFinalProg - _mantenimiento_posterior.Duracion;
+                        foreach (ConexionLegs c in conexiones_pairing_posteriores)
+                        {
+                            int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
+                            inicios_programados.Add(inicio_prog);
+                        }
+                    }
+                    if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
+                    {
+                        foreach (ConexionLegs c in conexiones_pax_posteriores)
+                        {
+                            int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
+                            inicios_programados.Add(inicio_prog);
+                        }
+                    }
+                    inicios_programados.Sort(); 
+                    if (_mantenimiento_posterior != null)
+                    {                        
+                                     
+                        return inicios_programados[0] - this.TFinalProg - _mantenimiento_posterior.Duracion;
                     }
                     else
                     {
-                        return this.Tramo_Siguiente.TInicialProg - this.TFinalProg;
+                        return inicios_programados[0] - this.TFinalProg;
                     }
                 }
                 else
@@ -531,6 +575,68 @@ namespace SimuLAN.Clases
         {
             get { return _negocio; }
             set { _negocio = value; }
+        }
+
+        public int NumConexionesPost
+        {
+            get
+            {
+                List<int> inicios_programados = new List<int>();
+                if (this.Tramo_Siguiente != null)
+                {
+                    inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
+                }
+                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, false);
+                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, false);
+                if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pairing_posteriores)
+                    {
+                        int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
+                        inicios_programados.Add(inicio_prog);
+                    }
+                }
+                if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pax_posteriores)
+                    {
+                        int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
+                        inicios_programados.Add(inicio_prog);
+                    }
+                }
+                return inicios_programados.Count;
+            }
+        }
+
+        public int NumConexionesPre
+        {
+            get
+            {
+                List<int> arrivos_programados = new List<int>();
+                if (this.Tramo_Previo != null)
+                {
+                    arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
+                }
+                SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, true);
+                SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, true);
+                if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pairing_previas)
+                    {
+                        int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
+                        arrivos_programados.Add(arrivo_prog);
+                    }
+                }
+                if (conexiones_pax_previas != null && conexiones_pax_previas.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pax_previas)
+                    {
+                        int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
+                        arrivos_programados.Add(arrivo_prog);
+                    }
+                }
+                return arrivos_programados.Count;
+            }
         }
 
         /// <summary>

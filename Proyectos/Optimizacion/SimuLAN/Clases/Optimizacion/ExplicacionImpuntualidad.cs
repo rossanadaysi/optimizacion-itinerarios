@@ -138,7 +138,7 @@ namespace SimuLAN.Clases.Optimizacion
             sb.Append("\t" + ImpuntualidadReaccionarios);
             sb.Append("\t" + ImpuntualidadSinReaccionarios);
             sb.Append("\t" + RazonReaccionarios);
-            sb.Append(CausasAtrasoSeparadasPor(", "));
+            sb.Append("\t" + CausasAtrasoSeparadasPor(", "));
             return sb.ToString();
         }
 

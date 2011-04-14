@@ -61,17 +61,18 @@ namespace SimuLAN.Clases.Optimizacion
             enviarMensaje("Generando simulación base");            
             ManagerSimulacion manager = new ManagerSimulacion(ItinerarioBase, Parametros, Disrupciones, stds, _fecha_ini, _fecha_fin, enviarMensaje, actualizarPorcentaje, ref optimizacionCancelada);            
             List<Simulacion> replicasBase = manager.SimularNormal();
-            Dictionary<int,ExplicacionImpuntualidad> impuntualidades_base = _tramos_optimizacion.EstimarImpuntualidades(replicasBase, _fecha_ini, _fecha_fin, _std);
+            Dictionary<int, ExplicacionImpuntualidad> impuntualidades_base = _tramos_optimizacion.EstimarImpuntualidades(replicasBase, _fecha_ini, _fecha_fin, _std);
             this._tramos_optimizacion.CargarImpuntualidadesBase(impuntualidades_base);            
             int iteraciones = 1;
             this._historial_puntualidades.Add(iteraciones, impuntualidades_base);
             while (iteraciones < 10)
             {
-                int variaciones, cambios_deshechos, tramos_cerrados;
-                this._tramos_optimizacion.OptimizarVariacionesReaccionarios(out variaciones, out cambios_deshechos, out tramos_cerrados);
+                int variaciones;
+                this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado(out variaciones);
+                //this._tramos_optimizacion.OptimizarVariacionesReaccionarios(out variaciones, out cambios_deshechos, out tramos_cerrados);
                 //Aplica variaciones en itinerario (siempre que no viole restricciones)
                 manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
-                enviarMensaje("Optimización número: " + iteraciones + ", variaciones: " + variaciones + ", tramos cerrados: " + tramos_cerrados);
+                enviarMensaje("Optimización número: " + iteraciones + ", variaciones: " + variaciones);
                 List<Simulacion> replicas = manager.SimularNormal();
                 Dictionary<int, ExplicacionImpuntualidad> impuntualidades = _tramos_optimizacion.EstimarImpuntualidades(replicas, _fecha_ini, _fecha_fin, _std);
                 this._tramos_optimizacion.CargarImpuntualidadesIteraciones(impuntualidades);
@@ -94,6 +95,7 @@ namespace SimuLAN.Clases.Optimizacion
             StringBuilder sb = new StringBuilder();
             sb.Append("iteracion");
             sb.Append("\tid_tramo");
+            //sb.Append("\tid_avion");
             sb.Append("\tImpuntualidadTotal");
             sb.Append("\tImpuntualidadReaccionarios");
             sb.Append("\tImpuntualidadSinReaccionarios");
@@ -102,13 +104,13 @@ namespace SimuLAN.Clases.Optimizacion
             sw.WriteLine(sb.ToString());
             foreach (int iteracion in this._historial_puntualidades.Keys)
             {
-                
-                foreach (int id_tramo in this._historial_puntualidades[iteracion].Keys)
+
+                foreach (int tramo in this._historial_puntualidades[iteracion].Keys)
                 {
                     sb = new StringBuilder();
                     sb.Append(iteracion);
-                    sb.Append("\t" + id_tramo);
-                    sb.Append("\t" + this._historial_puntualidades[iteracion][id_tramo].InfoParaReporte());
+                    sb.Append("\t" + tramo);
+                    sb.Append("\t" + this._historial_puntualidades[iteracion][tramo].InfoParaReporte());
                     sw.WriteLine(sb.ToString());
                 }
             }

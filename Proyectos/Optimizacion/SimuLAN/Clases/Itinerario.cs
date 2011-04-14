@@ -1301,7 +1301,7 @@ namespace SimuLAN.Clases
                     });
                     if (infoParaOptimizacion != null)
                     {
-                        t.ReprogramarTramo(infoParaOptimizacion.VariacionAplicadaResultante);
+                        t.ReprogramarTramo(infoParaOptimizacion.VariacionAplicada);
                     }
                     else
                     {

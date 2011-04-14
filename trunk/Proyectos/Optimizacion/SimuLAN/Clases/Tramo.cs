@@ -459,8 +459,8 @@ namespace SimuLAN.Clases
                 {
                     List<int> arrivos_programados = new List<int>();
                     arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
-                    SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, true);
-                    SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, true);
+                    SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
+                    SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
                     if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
                     {
                         foreach (ConexionLegs c in conexiones_pairing_previas)
@@ -502,8 +502,8 @@ namespace SimuLAN.Clases
                 {
                     List<int> inicios_programados = new List<int>();
                     inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
-                    SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, false);
-                    SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, false);
+                    SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
+                    SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
                     if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
                     {
                         foreach (ConexionLegs c in conexiones_pairing_posteriores)
@@ -586,8 +586,8 @@ namespace SimuLAN.Clases
                 {
                     inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
                 }
-                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, false);
-                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, false);
+                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
+                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
                 if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
                 {
                     foreach (ConexionLegs c in conexiones_pairing_posteriores)
@@ -617,8 +617,8 @@ namespace SimuLAN.Clases
                 {
                     arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
                 }
-                SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pairing, true);
-                SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Ac), TipoConexion.Pasajeros, true);
+                SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
+                SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
                 if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
                 {
                     foreach (ConexionLegs c in conexiones_pairing_previas)

@@ -508,7 +508,7 @@ namespace SimuLAN.Clases.Recovery
             while (minutos_ganancia_ini > 0 && temp_tramo.Tramo_Siguiente != null)
             {
                 //Se evalua ganacia es posibles conexiones
-                SerializableList<ConexionLegs> conexiones = temp_tramo.GetConexion(temp_tramo.TramoBase.Numero_Global, TipoConexion.Pairing, false);
+                SerializableList<ConexionLegs> conexiones = temp_tramo.ConexionesPairingAnteriores;// temp_tramo.GetConexion(temp_tramo.TramoBase.Numero_Global, TipoConexion.Pairing, false);
 
                 if (conexiones.Count > 0)
                 {
@@ -583,7 +583,7 @@ namespace SimuLAN.Clases.Recovery
 
                     if ((busquedaPorConexion && profundidad >= 0) || (!busquedaPorConexion && profundidad >= 1))
                     {
-                        SerializableList<ConexionLegs> conexiones = tramo_inicial_posterior_afectado.GetConexion(tramo_inicial_posterior_afectado.TramoBase.Numero_Global, TipoConexion.Pairing, false);
+                        SerializableList<ConexionLegs> conexiones = tramo_inicial_posterior_afectado.ConexionesPairingAnteriores;// tramo_inicial_posterior_afectado.GetConexion(tramo_inicial_posterior_afectado.TramoBase.Numero_Global, TipoConexion.Pairing, false);
                         foreach (ConexionLegs conexion in conexiones)
                         {
                             if (conexion != null)

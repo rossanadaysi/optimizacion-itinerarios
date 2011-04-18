@@ -979,7 +979,7 @@ namespace SimuLAN.Clases
             {
                 int atraso_total = 0;
                 causaAtrasoConexion = TipoDisrupcion.RC_TRIP;
-                SerializableList<ConexionLegs> conexionesPairings = Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pairing, true);
+                SerializableList<ConexionLegs> conexionesPairings = Tramo_Actual.ConexionesPairingPosteriores;// Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pairing, true);
                 ConexionLegs conexionPairing = ConexionLegs.BuscaConexionCriticaPairings(conexionesPairings);
                 Tramo tramo_previo_conex = conexionPairing.GetTramo(conexionPairing.NumTramoIni);
                 puedeDespegar = tramo_previo_conex.PuedeDespegar;
@@ -997,7 +997,7 @@ namespace SimuLAN.Clases
                 //Si puede despegar, se revisan los vuelos en conexión por pasajeros.
                 else
                 {
-                    SerializableList<ConexionLegs> conexionesPasajeros = Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pasajeros, true);
+                    SerializableList<ConexionLegs> conexionesPasajeros = Tramo_Actual.ConexionesPaxPosteriores;// Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pasajeros, true);
                     int minutos_proximo_vuelo = Tramo_Actual.GetMinutosProximoVuelo(Tramo_Actual);
                     int turn_around_conexion_pax = GetAeropuerto(Tramo_Actual.TramoBase.Origen).Minutos_Conexion_Pax;
                     tiempoResultanteActualDespegue = Tramo_Actual.TInicialRst;
@@ -1035,7 +1035,7 @@ namespace SimuLAN.Clases
             else if (Tramo_Actual.EsperaTramoPorConexionPairing)
             {
                 //Obtiene conexión y tramo previo de conexión
-                SerializableList<ConexionLegs> conexiones = Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pairing, true);
+                SerializableList<ConexionLegs> conexiones = Tramo_Actual.ConexionesPairingPosteriores;// Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pairing, true);
                 ConexionLegs conexion = ConexionLegs.BuscaConexionCriticaPairings(conexiones);
                 Tramo tramo_previo_conex = conexion.GetTramo(conexion.NumTramoIni);
                 //Se determina si se puede despegar en función del estado del tramo anterior.
@@ -1053,7 +1053,7 @@ namespace SimuLAN.Clases
             {
                 //Se asume que siempre se podrá despegar. Lo que variará es el atraso.
                 puedeDespegar = true;
-                SerializableList<ConexionLegs> conexiones = Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pasajeros, true);
+                SerializableList<ConexionLegs> conexiones = Tramo_Actual.ConexionesPaxPosteriores;// Tramo_Actual.GetConexion(Tramo_Actual.TramoBase.Numero_Global, TipoConexion.Pasajeros, true);
                 int minutos_proximo_vuelo = Tramo_Actual.GetMinutosProximoVuelo(Tramo_Actual);
                 int turn_around_conexion_pax = GetAeropuerto(Tramo_Actual.TramoBase.Origen).Minutos_Conexion_Pax;
                 int atraso_total = 0;
@@ -1472,7 +1472,7 @@ namespace SimuLAN.Clases
         {
             //Primero se obtiene el atraso del tramo conectado
             int tiempo_fin_resultante = tramoObjetivo.TFinalRst + _atraso_despegue + _atraso_vuelo;
-            SerializableList<ConexionLegs> conexionesPairings = tramoObjetivo.GetConexion(tramoObjetivo.TramoBase.Numero_Global, TipoConexion.Pairing, false);
+            SerializableList<ConexionLegs> conexionesPairings = tramoObjetivo.ConexionesPairingAnteriores;// tramoObjetivo.GetConexion(tramoObjetivo.TramoBase.Numero_Global, TipoConexion.Pairing, false);
             ConexionLegs conexion = conexionesPairings[0];
             Tramo tramoSiguiente = conexion.GetTramo(conexion.NumTramoFin);
             int tiempo_ini_sin_conexion = tramoSiguiente.TiempoInicialResultanteEstimado();

@@ -7,8 +7,6 @@ namespace SimuLAN.Clases.Optimizacion
 {
     public class InfoTramoParaOptimizacion
     {
-        private int _numero_conexiones_pre;
-        private int _numero_conexiones_post;
         private ExplicacionImpuntualidad _explicacion_impuntualidad_base;
         private ExplicacionImpuntualidad _explicacion_impuntualidad_actual;
         private ExplicacionImpuntualidad _explicacion_impuntualidad_previa;
@@ -41,25 +39,11 @@ namespace SimuLAN.Clases.Optimizacion
             get { return _tramo_original.TramoBase.Numero_Global; }
         }
 
-        public int NumeroConexionesPre
-        {
-            get { return _numero_conexiones_pre; }
-            set { _numero_conexiones_pre = value; }
-        }
-
-        public int NumeroConexionesPost
-        {
-            get { return _numero_conexiones_post; }
-            set { _numero_conexiones_post = value; }
-        }
-
         public double ComparadorPrioridadOptimizacion
         {
             get
             {
-                int aux1 = Math.Max(1, this.NumeroConexionesPost);
-                int aux2 = Math.Max(1, this.NumeroConexionesPre);
-                return this.ExplicacionImpuntualidadActual.AtrasoReaccionarios * aux1 / aux2; 
+                return this.ExplicacionImpuntualidadActual.AtrasoReaccionarios; 
             }
         }
 
@@ -67,8 +51,7 @@ namespace SimuLAN.Clases.Optimizacion
         {
             get 
             {
-                int aux = Math.Max(1, this.NumeroConexionesPre);
-                return this.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios * this.NumeroConexionesPost / aux; 
+                return this.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios;
             }
         }
 
@@ -180,8 +163,6 @@ namespace SimuLAN.Clases.Optimizacion
             this._variacion_menos_maxima_comercial = 15;
             this._variacion_mas_maxima_comercial = 15;
             this._variacion_aplicada = 0;
-            this._numero_conexiones_post = tramo.NumConexionesPost;
-            this._numero_conexiones_pre = tramo.NumConexionesPre;
             this._tramo_abierto = true;      
             this._tramo_previo = tramo_previo;
             this._tramo_original = tramo;
@@ -220,6 +201,12 @@ namespace SimuLAN.Clases.Optimizacion
             InfoTramoParaOptimizacion actual = this;
             while (actual != null)
             {
+                /*
+                 * forach(InfoTramoParaOptimizacion conexion in this.ConexionesPosteriores)
+                 * {
+                 *  atraso_propagado_global+=EstimarAtrasoPropagadoAvion(atraso_previo_a_conexion);
+                 * }
+                 * */
                 if (actual == this)
                 {
                     double reaccionario = Math.Max(0, atraso_previo - actual.TramoOriginal.MinutosMaximaVariacionAtras - (variacion_propuesta - actual.VariacionAplicadaTramoPrevio));

@@ -468,8 +468,14 @@ namespace InterfazSimuLAN
             {
                 _itinerarioBase.CargarDelegadosAvionesTramos(a);
             }
-            Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, 15, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
-            optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada);
+            //Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, _menuSimulacionNormal.STD_Optimizacion, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
+            //optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada,_menuSimulacionNormal.Iteraciones_Optimizacion);
+            Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, 0, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
+            optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada,_menuSimulacionNormal.Iteraciones_Optimizacion);           
+            optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase,15, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
+            optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada, _menuSimulacionNormal.Iteraciones_Optimizacion);
+            optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase,30, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes);
+            optimizador.OptimizarReaccionarios(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada, _menuSimulacionNormal.Iteraciones_Optimizacion);
             
             if (!_simulacion_cancelada)
             {               

@@ -200,8 +200,8 @@ namespace SimuLAN.Clases.Optimizacion
             sb.Append(ImpuntualidadTotal);
             sb.Append("\t" + ImpuntualidadReaccionarios);
             sb.Append("\t" + ImpuntualidadSinReaccionarios);
-            sb.Append("\t" + RazonImpuntualidadReaccionarios);
-            sb.Append("\t" + CausasAtrasoSeparadasPor(", "));
+           // sb.Append("\t" + RazonImpuntualidadReaccionarios);
+            //sb.Append("\t" + CausasAtrasoSeparadasPor(", "));
             return sb.ToString();
         }
         private double ObtenerAtraso(TipoDisrupcion tipo)

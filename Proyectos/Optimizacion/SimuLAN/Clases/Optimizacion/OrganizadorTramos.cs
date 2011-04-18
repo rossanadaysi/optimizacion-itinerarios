@@ -317,7 +317,53 @@ namespace SimuLAN.Clases.Optimizacion
         //    }
         //}
 
-        internal void OptimizarCurvasAtrasoPropagado(out int variaciones)
+        public int ObtenerMinimaVariacionDelanteTramo(InfoTramoParaOptimizacion info_tramo)
+        {
+            if (info_tramo.TramoSiguiente != null)
+            {
+                Dictionary<int, int> holguras_tramos_posteriores = info_tramo.TramoOriginal.HolgurasDelanteParaCadaConexion;
+                int ta_destino = info_tramo.TramoOriginal.TurnAroundMinimoDestino;
+                int minimo = int.MaxValue;
+                foreach (int id_tramo_destino in holguras_tramos_posteriores.Keys)
+                {
+                    int aux_minima_variacion = holguras_tramos_posteriores[id_tramo_destino] - ta_destino + _tramos[id_tramo_destino].VariacionAplicada;
+                    if (aux_minima_variacion < minimo)
+                    {
+                        minimo = aux_minima_variacion;
+                    }
+                }
+                return minimo;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public int ObtenerMinimaVariacionAtrasTramo(InfoTramoParaOptimizacion info_tramo)
+        {
+            if (info_tramo.TramoPrevio != null)
+            {
+                Dictionary<int, int> holguras_tramos_anteriores = info_tramo.TramoOriginal.HolgurasAtrasParaCadaConexion;
+                int ta_origen = info_tramo.TramoOriginal.TurnAroundMinimoOrigen;
+                int minimo = int.MaxValue;
+                foreach (int id_tramo_destino in holguras_tramos_anteriores.Keys)
+                {
+                    int aux_minima_variacion = holguras_tramos_anteriores[id_tramo_destino] - ta_origen - _tramos[id_tramo_destino].VariacionAplicada;
+                    if (aux_minima_variacion < minimo)
+                    {
+                        minimo = aux_minima_variacion;
+                    }
+                }
+                return minimo;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        internal void OptimizarCurvasAtrasoPropagado(out int variaciones,int salto_variaciones)
         {
             double ganancia_total = 0;
             variaciones = 0;
@@ -343,27 +389,33 @@ namespace SimuLAN.Clases.Optimizacion
                         if (!infoTramoOptimizado[index])
                         {
                             //Obtener rangos posibles de variación de la curva
-                            int rangoMenos = Math.Min(infoTramo.VariacionMenosMaximaComercial, infoTramo.TramoOriginal.MinutosMaximaVariacionAtras - infoTramo.VariacionAplicadaTramoPrevio);
-                            int rangoMas = Math.Min(infoTramo.VariacionMasMaximaComercial, infoTramo.TramoOriginal.MinutosMaximaVariacionDelante + infoTramo.VariacionAplicadaTramoSiguiente);
-                            if (rangoMas + rangoMenos > 0)
+                            int minimaVariacionDelante = ObtenerMinimaVariacionDelanteTramo(infoTramo);
+                            int minimaVariacionAtras = ObtenerMinimaVariacionAtrasTramo(infoTramo);
+                            int rangoMenos = Math.Min(infoTramo.VariacionMenosMaximaComercial, minimaVariacionAtras);
+                            rangoMenos = rangoMenos - rangoMenos % salto_variaciones;
+                            int rangoMas = Math.Min(infoTramo.VariacionMasMaximaComercial, minimaVariacionDelante);
+                            rangoMas = rangoMas - rangoMas % salto_variaciones;
+                            if (rangoMas<0 || rangoMenos < 0)
+                            {
+
+                            }
+                            if (rangoMas > 0 || rangoMenos > 0)
                             {
                                 Dictionary<double, double> curva_atrasos_propagados_globales = new Dictionary<double, double>();
-                                for (int i = -rangoMenos; i <= rangoMas; i++)
+                                for (int i = -rangoMenos; i <= rangoMas; i = i + salto_variaciones)
                                 {
                                     double atraso_previo = infoTramo.AtrasoTramoPrevio;
                                     double atraso_propagado = infoTramo.EstimarAtrasoPropagadoAvion(atraso_previo, i);
                                     curva_atrasos_propagados_globales.Add(i, atraso_propagado);
                                 }
-                                Curva c = new Curva(curva_atrasos_propagados_globales, -rangoMenos, rangoMas);
+                                Curva c = new Curva(curva_atrasos_propagados_globales, -rangoMenos, rangoMas, salto_variaciones);
                                 infoTramoDisminucionAtraso.Add(index, c.DiferenciaValorOptimoConValorEnCero);
                                 infoTramoVariacionPropuesta.Add(index, c.PuntoOptimo);
-                                //Obtener mínimo de atraso propagado
-                                //Aplicar en cambio en VariacionAplicada ahora. Opción buscar ma mejor opción de todas, aplicarla e iterar hasta que acabe (cuadrático).
-                                //infoTramo.VariacionAplicada = variacion_propuesta;
-                                //if (variacion_propuesta > 0)
-                                //{
-                                //    variaciones++;
-                                //}
+                                if (c.PuntoMasCercanoCero != 0 && c.DiferenciaValorOptimoConValorEnCero <= 0)
+                                {
+                                    infoTramo.VariacionAplicada = Convert.ToInt32(c.PuntoMasCercanoCero);
+                                    infoTramoOptimizado[index] = true;
+                                }
                             }
                             else
                             {
@@ -409,6 +461,7 @@ namespace SimuLAN.Clases.Optimizacion
                     }
                     else
                     {
+                        
                         cantidad_tramos_optimizados = this.TramosPorAvion[avion].Count;
                     }                  
                  }
@@ -417,6 +470,133 @@ namespace SimuLAN.Clases.Optimizacion
 
         }
 
-       
+        internal void DeshacerCambiosQueEmpeoranPuntualidad(out int cambios, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial,Dictionary<int,int> variacion_penultima, bool revisaPrimero)
+        {
+            //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
+            cambios = 0;
+            int index_ultimo= historial.Count;
+            int index_penultimo = historial.Count-1;
+            int index_ini = revisaPrimero ? 1 : historial.Count - 1;
+            //Estudiar forma de deshacer: mirando a tramo previo o no.
+            foreach (string id_avion in _tramos_por_avion.Keys)
+            {
+                foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                {
+                    int id_tramo = tramo.IdTramo;
+                    double impuntualidad_ultima = historial[index_ultimo][id_tramo].ImpuntualidadTotal;
+                    double impuntualidad_penultima = historial[index_penultimo][id_tramo].ImpuntualidadTotal;
+                    double impuntualidad_inicial = historial[index_ini][id_tramo].ImpuntualidadTotal;
+                    InfoTramoParaOptimizacion tramo_siguiente = tramo.TramoSiguiente;
+                    while (tramo_siguiente!=null && tramo_siguiente.VariacionAplicada == 0)
+                    {
+                        impuntualidad_ultima += historial[index_ultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal;
+                        impuntualidad_penultima += historial[index_penultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal;
+                        impuntualidad_inicial += historial[index_ini][tramo_siguiente.IdTramo].ImpuntualidadTotal;
+                        tramo_siguiente = tramo_siguiente.TramoSiguiente;
+                    }
+                    //Opcion: agregar rango de tolerancia
+                    if (impuntualidad_penultima >= impuntualidad_inicial && impuntualidad_ultima > impuntualidad_inicial)
+                    {
+                        if (tramo.VariacionAplicada > 0)
+                        {
+                            cambios++;
+                        }
+                        tramo.VariacionAplicada = 0;
+
+                    }
+                    else if (impuntualidad_penultima <= impuntualidad_inicial && impuntualidad_penultima < impuntualidad_ultima)
+                    {
+                        if (tramo.VariacionAplicada > 0)
+                        {
+                            cambios++;
+                        }
+                        tramo.VariacionAplicada = variacion_penultima[id_tramo];
+                    }
+                }                
+            }
+        }
+
+        internal void VolverAEstadoDeMejorPuntualidad(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2)
+        {
+            //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
+            
+            //Estudiar forma de deshacer: mirando a tramo previo o no.
+            foreach (string id_avion in _tramos_por_avion.Keys)
+            {
+                double impuntualidad_minima_1, impuntualidad_minima_2;
+                int iteracion_mejor_puntualidad_1 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_1, id_avion,out impuntualidad_minima_1);
+                int iteracion_mejor_puntualidad_2 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_2, id_avion, out impuntualidad_minima_2);
+                if (impuntualidad_minima_1 < impuntualidad_minima_2)
+                {
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    {
+                        int id_tramo = tramo.IdTramo;
+                        if (historial_variaciones_1.ContainsKey(iteracion_mejor_puntualidad_1))
+                        {
+                            tramo.VariacionAplicada = historial_variaciones_1[iteracion_mejor_puntualidad_1][id_tramo];
+                        }
+                        else
+                        {
+                            tramo.VariacionAplicada = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    {
+                        int id_tramo = tramo.IdTramo;
+                        if (historial_variaciones_2.ContainsKey(iteracion_mejor_puntualidad_2))
+                        {
+                            tramo.VariacionAplicada = historial_variaciones_2[iteracion_mejor_puntualidad_2][id_tramo];
+                        }
+                        else
+                        {
+                            tramo.VariacionAplicada = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        private int ObtenerIteracionDeMejorPuntualidad(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double impuntualidad_minima)
+        {
+            Dictionary<int, double> impuntualidad_acumulada = new Dictionary<int, double>();
+            int total_tramos = this._tramos_por_avion[id_avion].Count;
+            foreach (int i in historial_puntualidad.Keys)
+            {
+                impuntualidad_acumulada.Add(i, 0);
+                foreach (InfoTramoParaOptimizacion tramo in this._tramos_por_avion[id_avion])
+                {
+                    impuntualidad_acumulada[i]+= historial_puntualidad[i][tramo.IdTramo].ImpuntualidadTotal;
+                }
+                impuntualidad_acumulada[i] /= total_tramos;
+            }
+            double minimo = double.MaxValue;
+            int index_min = -1;
+            foreach (int index in impuntualidad_acumulada.Keys)
+            {
+                if (impuntualidad_acumulada[index] < minimo)
+                {
+                    minimo = impuntualidad_acumulada[index];
+                    index_min = index;
+                }
+            }
+            impuntualidad_minima = minimo;
+            return index_min;            
+        }
+
+        internal Dictionary<int, int> ObtenerVariacionesPropuestas()
+        {
+            Dictionary<int, int> variaciones = new Dictionary<int, int>();
+            foreach (string id_avion in _tramos_por_avion.Keys)
+            {
+                foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                {
+                    variaciones.Add(tramo.IdTramo, tramo.VariacionAplicada);
+                }
+            }
+            return variaciones;
+        }
     }
 }

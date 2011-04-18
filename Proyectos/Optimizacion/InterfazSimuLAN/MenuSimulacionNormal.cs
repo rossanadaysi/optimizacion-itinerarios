@@ -83,6 +83,39 @@ namespace InterfazSimuLAN
             get { return new OcultarVentanaEventHandler(Hide); }
         }
 
+        public int STD_Optimizacion
+        {
+            get
+            {
+                try
+                {
+                    int std = Convert.ToInt32(textBox2.Text);
+                    return std;
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public int Iteraciones_Optimizacion
+        {
+            get
+            {
+                try
+                {
+                    int i = Convert.ToInt32(textBox3.Text);
+                    return i;
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
+
         #endregion
 
         #region CONSTRUCTOR

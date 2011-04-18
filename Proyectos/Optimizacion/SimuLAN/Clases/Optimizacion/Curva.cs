@@ -16,6 +16,8 @@ namespace SimuLAN.Clases.Optimizacion
 
         private double _rango_mas;
 
+        private double _salto_variacion;
+
         public double PuntoOptimo
         {
             get
@@ -28,6 +30,32 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
+
+        public double PuntoMasCercanoCero
+        {
+            get
+            {
+                double diff_min = double.MaxValue;                 
+                bool encuentra = false;
+                foreach (double key in _puntos_curva.Keys)
+                {
+                    if (Math.Abs(diff_min) > Math.Abs(key))
+                    {
+                        diff_min = key;
+                        encuentra = true;
+                    }
+                }
+                if (encuentra)
+                {
+                    return diff_min;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+        
         public double ValorOptimo
         {
             get
@@ -55,18 +83,19 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        public Curva(Dictionary<double, double> puntos_curva,double rangoMenos, double rangoMas)
+        public Curva(Dictionary<double, double> puntos_curva,double rangoMenos, double rangoMas,double salto_variacion)
         {
             this._puntos_curva = puntos_curva;
             this._punto_optimo = double.MinValue;
             this._valor_optimo = double.MaxValue;
             this._rango_menos = rangoMenos;
             this._rango_mas = rangoMas;
+            this._salto_variacion = salto_variacion;
         }
 
         private void BuscarMinimoCercanoCero()
-        {            
-            for (int i = 0; i <= _rango_mas; i++)
+        {
+            for (double i = 0; i <= _rango_mas; i = i + _salto_variacion)
             {
                 if (_puntos_curva.ContainsKey(i))
                 {
@@ -77,7 +106,7 @@ namespace SimuLAN.Clases.Optimizacion
                     }
                 }
             }
-            for (int i = 0; i >= _rango_menos; i--)
+            for (double i = 0; i >= _rango_menos; i = i - _salto_variacion)
             {
                 if (_puntos_curva.ContainsKey(i))
                 {

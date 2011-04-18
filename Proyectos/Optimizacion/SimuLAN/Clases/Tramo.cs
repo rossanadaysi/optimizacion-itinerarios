@@ -29,6 +29,10 @@ namespace SimuLAN.Clases
         /// </summary>
         private Dictionary<TipoDisrupcion, int> _causas_atraso;
 
+        private SerializableList<ConexionLegs> _conexiones_pairing_posteriores;   
+        private SerializableList<ConexionLegs> _conexiones_pax_posteriores;
+        private SerializableList<ConexionLegs> _conexiones_pairing_anteriores;
+        private SerializableList<ConexionLegs> _conexiones_pax_anteriores;
         /// <summary>
         /// Contador para todos los tramos de vuelo representados en la simulación
         /// </summary>
@@ -89,7 +93,8 @@ namespace SimuLAN.Clases
         /// Delegado que encapsula el método para obtener el turn around mínimo correspondiente al origen del tramo
         /// </summary>
         private GetTurnAroundMinEventHandler _get_turn_around_min;
-
+        private Dictionary<int,int> _holguras_delante_para_cada_conexion;
+        private Dictionary<int, int> _holguras_atras_para_cada_conexion;
         /// <summary>
         /// Matrícula del avión que operó el tramo
         /// </summary>
@@ -200,7 +205,53 @@ namespace SimuLAN.Clases
         {
             get { return _causas_atraso; }
         }
-        
+
+        public SerializableList<ConexionLegs> ConexionesPairingPosteriores
+        {
+            get
+            {
+                if (_conexiones_pairing_posteriores == null)
+                {
+                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
+                }
+                return _conexiones_pairing_posteriores;
+            }
+        }
+
+        public SerializableList<ConexionLegs> ConexionesPaxPosteriores
+        {
+            get
+            {
+                if (_conexiones_pairing_posteriores == null)
+                {
+                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
+                }
+                return _conexiones_pairing_posteriores;
+            }
+        }
+
+        public SerializableList<ConexionLegs> ConexionesPairingAnteriores
+        {
+            get
+            {
+                if (_conexiones_pairing_posteriores == null)
+                {
+                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
+                }
+                return _conexiones_pairing_posteriores;
+            }
+        }
+        public SerializableList<ConexionLegs> ConexionesPaxAnteriores
+        {
+            get
+            {
+                if (_conexiones_pairing_posteriores == null)
+                {
+                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
+                }
+                return _conexiones_pairing_posteriores;
+            }
+        }
         /// <summary>
         /// Fecha inicial de aterrizaje (Fecha y Hora)
         /// </summary>
@@ -448,44 +499,136 @@ namespace SimuLAN.Clases
         {
             get { return this.DtIniProg.AddMinutes(this.TInicialRst - this.TInicialProg).Month; }
         }
-
-
-        public int HolguraAtras
+        
+        public List<Tramo> TramosConectadosDelante
         {
             get
             {
-
-                if (this.Tramo_Previo != null)
+                List<Tramo> tramos = new List<Tramo>();
+                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.ConexionesPairingAnteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
+                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.ConexionesPaxAnteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
+                if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
                 {
-                    List<int> arrivos_programados = new List<int>();
-                    arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
-                    SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
-                    SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
-                    if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
+                    foreach (ConexionLegs c in conexiones_pairing_posteriores)
                     {
-                        foreach (ConexionLegs c in conexiones_pairing_previas)
+                        Tramo tramo = c.GetTramo(c.NumTramoFin);
+                        tramos.Add(tramo);
+                    }
+                }
+                if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pax_posteriores)
+                    {
+                        Tramo tramo = c.GetTramo(c.NumTramoFin);
+                        tramos.Add(tramo);
+                    }
+                }
+                return tramos;                
+            }
+        }
+        
+        public List<Tramo> TramosConectadosAtras
+        {
+            get
+            {
+                List<Tramo> tramos = new List<Tramo>();
+                SerializableList<ConexionLegs> conexiones_pairing_anteriores = this.ConexionesPairingPosteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
+                SerializableList<ConexionLegs> conexiones_pax_anteriores = this.ConexionesPaxPosteriores; // this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
+                if (conexiones_pairing_anteriores != null && conexiones_pairing_anteriores.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pairing_anteriores)
+                    {
+                        Tramo tramo = c.GetTramo(c.NumTramoIni);
+                        tramos.Add(tramo);
+                    }
+                }
+                if (conexiones_pax_anteriores != null && conexiones_pax_anteriores.Count > 0)
+                {
+                    foreach (ConexionLegs c in conexiones_pax_anteriores)
+                    {
+                        Tramo tramo = c.GetTramo(c.NumTramoIni);
+                        tramos.Add(tramo);
+                    }
+                }
+                return tramos;
+            }
+        }
+        
+        public Dictionary<int, int> HolgurasDelanteParaCadaConexion
+        {
+            get 
+            {
+                if (_holguras_delante_para_cada_conexion == null)
+                {
+                    _holguras_delante_para_cada_conexion = new Dictionary<int, int>();
+                    if (this.Tramo_Siguiente != null)
+                    {
+                        int tiempo_fin_corregido = 0;
+                        if (_mantenimiento_posterior != null)
                         {
-                            int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
-                            arrivos_programados.Add(arrivo_prog);
+                            tiempo_fin_corregido = this.TFinalProg + _mantenimiento_posterior.Duracion;
+                        }
+                        else
+                        {
+                            tiempo_fin_corregido = this.TFinalProg;
+                        }
+                        _holguras_delante_para_cada_conexion.Add(this.Tramo_Siguiente.TramoBase.Numero_Global, this.Tramo_Siguiente.TInicialProg - tiempo_fin_corregido);
+                        foreach (Tramo t in this.TramosConectadosDelante)
+                        {
+                            _holguras_delante_para_cada_conexion.Add(t.TramoBase.Numero_Global, t.TInicialProg - tiempo_fin_corregido);
                         }
                     }
-                    if (conexiones_pax_previas != null && conexiones_pax_previas.Count > 0)
+                }
+                return _holguras_delante_para_cada_conexion;
+            }
+        }
+
+        public Dictionary<int, int> HolgurasAtrasParaCadaConexion
+        {
+            get
+            {
+                if (_holguras_atras_para_cada_conexion == null)
+                {
+                    _holguras_atras_para_cada_conexion = new Dictionary<int, int>();
+                    if (this.Tramo_Previo != null)
                     {
-                        foreach (ConexionLegs c in conexiones_pax_previas)
+                        int tiempo_fin_corregido = 0;
+                        if (this.Tramo_Previo._mantenimiento_posterior != null)
                         {
-                            int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
-                            arrivos_programados.Add(arrivo_prog);
+
+                            tiempo_fin_corregido = this.TInicialProg - this.Tramo_Previo._mantenimiento_posterior.Duracion;
+                        }
+                        else
+                        {
+                            tiempo_fin_corregido = this.TInicialProg;
+                        }
+                        _holguras_atras_para_cada_conexion.Add(this.Tramo_Previo.TramoBase.Numero_Global, tiempo_fin_corregido - this.Tramo_Previo.TFinalProg);
+                        foreach (Tramo t in this.TramosConectadosAtras)
+                        {
+                            _holguras_atras_para_cada_conexion.Add(t.TramoBase.Numero_Global, tiempo_fin_corregido - t.TFinalProg);
                         }
                     }
-                    arrivos_programados.Sort();
-                    if (this.Tramo_Previo._mantenimiento_posterior != null)
+                }
+                return _holguras_atras_para_cada_conexion;
+            }
+        }
+
+        public int HolguraAtrasMaxima
+        {
+            get
+            {
+                Dictionary<int, int> holguras = this.HolgurasAtrasParaCadaConexion;
+                if (holguras.Count > 0)
+                {
+                    int minimo = int.MaxValue;
+                    foreach (int id_tramo in holguras.Keys)
                     {
-                        return this.TInicialProg - arrivos_programados[arrivos_programados.Count - 1] - this.Tramo_Previo._mantenimiento_posterior.Duracion;
+                        if (holguras[id_tramo] < minimo)
+                        {
+                            minimo = holguras[id_tramo];
+                        }
                     }
-                    else
-                    {
-                        return this.TInicialProg - arrivos_programados[arrivos_programados.Count - 1];
-                    }
+                    return minimo;
                 }
                 else
                 {
@@ -494,42 +637,22 @@ namespace SimuLAN.Clases
             }
         }
 
-        public int HolguraDelante
+        public int HolguraDelanteMaxima
         {
             get 
             {
-                if (this.Tramo_Siguiente != null)
-                {
-                    List<int> inicios_programados = new List<int>();
-                    inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
-                    SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
-                    SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
-                    if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
+                Dictionary<int, int> holguras = this.HolgurasDelanteParaCadaConexion;
+                if (holguras.Count > 0)
+                {                    
+                    int minimo = int.MaxValue;
+                    foreach (int id_tramo in holguras.Keys)
                     {
-                        foreach (ConexionLegs c in conexiones_pairing_posteriores)
+                        if (holguras[id_tramo] < minimo)
                         {
-                            int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
-                            inicios_programados.Add(inicio_prog);
+                            minimo = holguras[id_tramo];
                         }
                     }
-                    if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
-                    {
-                        foreach (ConexionLegs c in conexiones_pax_posteriores)
-                        {
-                            int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
-                            inicios_programados.Add(inicio_prog);
-                        }
-                    }
-                    inicios_programados.Sort(); 
-                    if (_mantenimiento_posterior != null)
-                    {                        
-                                     
-                        return inicios_programados[0] - this.TFinalProg - _mantenimiento_posterior.Duracion;
-                    }
-                    else
-                    {
-                        return inicios_programados[0] - this.TFinalProg;
-                    }
+                    return minimo;
                 }
                 else
                 {
@@ -544,21 +667,8 @@ namespace SimuLAN.Clases
             {
                 if (this.Tramo_Siguiente != null)
                 {
-                    return HolguraDelante - this.GetTurnAroundMinimo(this.Tramo_Siguiente);
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
-        public int MinutosMaximaVariacionAtras
-        {
-            get
-            {
-                if (this.Tramo_Previo != null)
-                {
-                    return HolguraAtras - this.GetTurnAroundMinimo(this);
+                    int retorno = HolguraDelanteMaxima - TurnAroundMinimoDestino;
+                    return retorno;
                 }
                 else
                 {
@@ -567,6 +677,45 @@ namespace SimuLAN.Clases
             }
         }
 
+        public int MinutosMaximaVariacionAtras
+        {
+            get
+            {
+                if (this.Tramo_Previo != null)
+                {
+                    int retorno = HolguraAtrasMaxima - TurnAroundMinimoOrigen;
+                    return retorno;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
+        public int TurnAroundMinimoOrigen
+        {
+            get
+            {
+                return this.GetTurnAroundMinimo(this);                
+            }
+        }
+
+        public int TurnAroundMinimoDestino
+        {
+            get
+            {
+                if (this.Tramo_Siguiente != null)
+                {
+                    int retorno = this.GetTurnAroundMinimo(this.Tramo_Siguiente);
+                    return retorno;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
 
         /// <summary>
         /// Indica el negocio o ruta comercial al que pertenece el tramo
@@ -575,68 +724,6 @@ namespace SimuLAN.Clases
         {
             get { return _negocio; }
             set { _negocio = value; }
-        }
-
-        public int NumConexionesPost
-        {
-            get
-            {
-                List<int> inicios_programados = new List<int>();
-                if (this.Tramo_Siguiente != null)
-                {
-                    inicios_programados.Add(this.Tramo_Siguiente.TInicialProg);
-                }
-                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
-                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
-                if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pairing_posteriores)
-                    {
-                        int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
-                        inicios_programados.Add(inicio_prog);
-                    }
-                }
-                if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pax_posteriores)
-                    {
-                        int inicio_prog = c.GetTramo(c.NumTramoFin).TInicialProg;
-                        inicios_programados.Add(inicio_prog);
-                    }
-                }
-                return inicios_programados.Count;
-            }
-        }
-
-        public int NumConexionesPre
-        {
-            get
-            {
-                List<int> arrivos_programados = new List<int>();
-                if (this.Tramo_Previo != null)
-                {
-                    arrivos_programados.Add(this.Tramo_Previo.TFinalProg);
-                }
-                SerializableList<ConexionLegs> conexiones_pairing_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
-                SerializableList<ConexionLegs> conexiones_pax_previas = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
-                if (conexiones_pairing_previas != null && conexiones_pairing_previas.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pairing_previas)
-                    {
-                        int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
-                        arrivos_programados.Add(arrivo_prog);
-                    }
-                }
-                if (conexiones_pax_previas != null && conexiones_pax_previas.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pax_previas)
-                    {
-                        int arrivo_prog = c.GetTramo(c.NumTramoIni).TFinalProg;
-                        arrivos_programados.Add(arrivo_prog);
-                    }
-                }
-                return arrivos_programados.Count;
-            }
         }
 
         /// <summary>
@@ -919,7 +1006,15 @@ namespace SimuLAN.Clases
         /// <returns>True si se puede hacer recovery</returns>
         internal bool PasaRestriccionConexionParaRecovery(bool esSegundoTramo)
         {
-            SerializableList<ConexionLegs> conexiones = this.GetConexion(this.TramoBase.Numero_Global, TipoConexion.Pairing, esSegundoTramo);
+            SerializableList<ConexionLegs> conexiones;// this.GetConexion(this.TramoBase.Numero_Global, TipoConexion.Pairing, esSegundoTramo);
+            if (esSegundoTramo)
+            {
+                conexiones = this.ConexionesPairingPosteriores;
+            }
+            else
+            {
+                conexiones = this.ConexionesPairingAnteriores;
+            }
             if (conexiones.Count == 0)
             {
                 return true;
@@ -1287,16 +1382,16 @@ namespace SimuLAN.Clases
         {
             if (movimiento > 0)
             {
-                if (movimiento > HolguraDelante)
+                if (movimiento > MinutosMaximaVariacionDelante)
                 {
-                    movimiento = HolguraDelante;
+                    movimiento = MinutosMaximaVariacionDelante;
                 }
             }
             else
             {
-                if (-movimiento > HolguraAtras)
+                if (-movimiento > MinutosMaximaVariacionAtras)
                 {
-                    movimiento = -HolguraAtras;
+                    movimiento = -MinutosMaximaVariacionAtras;
                 }
             }
             if (movimiento != 0)

@@ -47,14 +47,6 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        public double ComparadorPrioridadOptimizacionReaccionarioNeto
-        {
-            get 
-            {
-                return this.ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios;
-            }
-        }
-
         public bool Optimizable
         {
             get
@@ -157,11 +149,11 @@ namespace SimuLAN.Clases.Optimizacion
             set { _tramo_abierto = value; }
         }
 
-        public InfoTramoParaOptimizacion(Tramo tramo, InfoTramoParaOptimizacion tramo_previo)
+        public InfoTramoParaOptimizacion(Tramo tramo, InfoTramoParaOptimizacion tramo_previo, int variacion_permitida)
         {
             this._explicacion_impuntualidad_base = null;
-            this._variacion_menos_maxima_comercial = 15;
-            this._variacion_mas_maxima_comercial = 15;
+            this._variacion_menos_maxima_comercial = variacion_permitida;
+            this._variacion_mas_maxima_comercial = variacion_permitida;
             this._variacion_aplicada = 0;
             this._tramo_abierto = true;      
             this._tramo_previo = tramo_previo;
@@ -201,12 +193,6 @@ namespace SimuLAN.Clases.Optimizacion
             InfoTramoParaOptimizacion actual = this;
             while (actual != null)
             {
-                /*
-                 * forach(InfoTramoParaOptimizacion conexion in this.ConexionesPosteriores)
-                 * {
-                 *  atraso_propagado_global+=EstimarAtrasoPropagadoAvion(atraso_previo_a_conexion);
-                 * }
-                 * */
                 if (actual == this)
                 {
                     double reaccionario = Math.Max(0, atraso_previo - actual.TramoOriginal.MinutosMaximaVariacionAtras - (variacion_propuesta - actual.VariacionAplicadaTramoPrevio));

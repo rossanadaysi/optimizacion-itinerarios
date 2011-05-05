@@ -8,7 +8,7 @@ namespace SimuLAN.Clases.Optimizacion
     {
         private Dictionary<int, InfoTramoParaOptimizacion> _tramos;
         private Dictionary<string, List<InfoTramoParaOptimizacion>> _tramos_por_avion;
-
+        private int _variacion_permitida;
         public Dictionary<string, List<InfoTramoParaOptimizacion>> TramosPorAvion
         {
             get { return _tramos_por_avion; }
@@ -105,9 +105,10 @@ namespace SimuLAN.Clases.Optimizacion
 
         public Itinerario ItinerarioBase { get; set; }
 
-        public OrganizadorTramos(Itinerario itinerarioBase)
+        public OrganizadorTramos(Itinerario itinerarioBase, int variacion_permitida)
         {
             this.ItinerarioBase = itinerarioBase;
+            this._variacion_permitida = variacion_permitida;
             _tramos = new Dictionary<int, InfoTramoParaOptimizacion>();
             _tramos_por_avion = new Dictionary<string, List<InfoTramoParaOptimizacion>>();
             CargarTramos();
@@ -122,7 +123,7 @@ namespace SimuLAN.Clases.Optimizacion
                 InfoTramoParaOptimizacion tramo_previo = null ;
                 while (aux != null)
                 {
-                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(aux, tramo_previo);
+                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(aux, tramo_previo, _variacion_permitida);
                     tramo_previo = tramo_new;
                     _tramos.Add(tramo_new.IdTramo, tramo_new);
                     _tramos_por_avion[a.IdAvion].Add(tramo_new);
@@ -165,9 +166,12 @@ namespace SimuLAN.Clases.Optimizacion
                             {
                                 if (tipo != TipoDisrupcion.ADELANTO)
                                 {
-                                    if (atraso > std && tramo.CausasAtraso.ContainsKey(tipo))
+                                    if (tramo.CausasAtraso.ContainsKey(tipo))
                                     {
-                                        contadorImpuntualidad[id][tipo][0] += tramo.CausasAtraso[tipo] / ((double)(atraso));
+                                        if (atraso > std)
+                                        {
+                                            contadorImpuntualidad[id][tipo][0] += tramo.CausasAtraso[tipo] / ((double)(atraso));
+                                        }
                                         sumaAtrasosTramo[id][tipo][0] += tramo.CausasAtraso[tipo];
                                     }
                                     contadorImpuntualidad[id][tipo][1]++;
@@ -516,6 +520,53 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
+        internal void DeshacerCambiosQueEmpeoranAtrasoPropagado(out int cambios, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial, Dictionary<int, int> variacion_penultima, bool revisaPrimero)
+        {
+            //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
+            cambios = 0;
+            int index_ultimo = historial.Count;
+            int index_penultimo = historial.Count - 1;
+            int index_ini = revisaPrimero ? 1 : historial.Count - 1;
+            //Estudiar forma de deshacer: mirando a tramo previo o no.
+            foreach (string id_avion in _tramos_por_avion.Keys)
+            {
+                foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                {
+                    int id_tramo = tramo.IdTramo;
+                    double atraso_ultimo = historial[index_ultimo][id_tramo].AtrasoTotal;
+                    double atraso_penultimo = historial[index_penultimo][id_tramo].AtrasoTotal;
+                    double atraso_inicial = historial[index_ini][id_tramo].AtrasoTotal;
+                    InfoTramoParaOptimizacion tramo_siguiente = tramo.TramoSiguiente;
+                    while (tramo_siguiente != null && tramo_siguiente.VariacionAplicada == 0)
+                    {
+                        atraso_ultimo += historial[index_ultimo][tramo_siguiente.IdTramo].AtrasoTotal;
+                        atraso_penultimo += historial[index_penultimo][tramo_siguiente.IdTramo].AtrasoTotal;
+                        atraso_inicial += historial[index_ini][tramo_siguiente.IdTramo].AtrasoTotal;
+                        tramo_siguiente = tramo_siguiente.TramoSiguiente;
+                    }
+                    //Opcion: agregar rango de tolerancia
+                    if (atraso_penultimo >= atraso_inicial && atraso_ultimo > atraso_inicial)
+                    {
+                        if (tramo.VariacionAplicada > 0)
+                        {
+                            cambios++;
+                        }
+                        tramo.VariacionAplicada = 0;
+
+                    }
+                    else if (atraso_penultimo <= atraso_inicial && atraso_penultimo < atraso_ultimo)
+                    {
+                        if (tramo.VariacionAplicada > 0)
+                        {
+                            cambios++;
+                        }
+                        tramo.VariacionAplicada = variacion_penultima[id_tramo];
+                    }
+                }
+            }
+        }
+
+
         internal void VolverAEstadoDeMejorPuntualidad(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2)
         {
             //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
@@ -559,6 +610,50 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
+        internal void VolverAEstadoDeMenorAtrasoPropagado(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2)
+        {
+            //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
+
+            //Estudiar forma de deshacer: mirando a tramo previo o no.
+            foreach (string id_avion in _tramos_por_avion.Keys)
+            {
+                double atraso_minimo_1, atraso_minimo_2;
+                int iteracion_mejor_atraso_1 = ObtenerIteracionDeMenorAtraso(historial_puntualidad_1, id_avion, out atraso_minimo_1);
+                int iteracion_mejor_atraso_2 = ObtenerIteracionDeMenorAtraso(historial_puntualidad_2, id_avion, out atraso_minimo_2);
+                if (atraso_minimo_1 < atraso_minimo_2)
+                {
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    {
+                        int id_tramo = tramo.IdTramo;
+                        if (historial_variaciones_1.ContainsKey(iteracion_mejor_atraso_1))
+                        {
+                            tramo.VariacionAplicada = historial_variaciones_1[iteracion_mejor_atraso_1][id_tramo];
+                        }
+                        else
+                        {
+                            tramo.VariacionAplicada = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    {
+                        int id_tramo = tramo.IdTramo;
+                        if (historial_variaciones_2.ContainsKey(iteracion_mejor_atraso_2))
+                        {
+                            tramo.VariacionAplicada = historial_variaciones_2[iteracion_mejor_atraso_2][id_tramo];
+                        }
+                        else
+                        {
+                            tramo.VariacionAplicada = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+
         private int ObtenerIteracionDeMejorPuntualidad(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double impuntualidad_minima)
         {
             Dictionary<int, double> impuntualidad_acumulada = new Dictionary<int, double>();
@@ -584,6 +679,33 @@ namespace SimuLAN.Clases.Optimizacion
             }
             impuntualidad_minima = minimo;
             return index_min;            
+        }
+
+        private int ObtenerIteracionDeMenorAtraso(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double atraso_minimo)
+        {
+            Dictionary<int, double> atraso_acumulado = new Dictionary<int, double>();
+            int total_tramos = this._tramos_por_avion[id_avion].Count;
+            foreach (int i in historial_puntualidad.Keys)
+            {
+                atraso_acumulado.Add(i, 0);
+                foreach (InfoTramoParaOptimizacion tramo in this._tramos_por_avion[id_avion])
+                {
+                    atraso_acumulado[i] += historial_puntualidad[i][tramo.IdTramo].AtrasoTotal;
+                }
+                atraso_acumulado[i] /= total_tramos;
+            }
+            double minimo = double.MaxValue;
+            int index_min = -1;
+            foreach (int index in atraso_acumulado.Keys)
+            {
+                if (atraso_acumulado[index] < minimo)
+                {
+                    minimo = atraso_acumulado[index];
+                    index_min = index;
+                }
+            }
+            atraso_minimo = minimo;
+            return index_min;
         }
 
         internal Dictionary<int, int> ObtenerVariacionesPropuestas()

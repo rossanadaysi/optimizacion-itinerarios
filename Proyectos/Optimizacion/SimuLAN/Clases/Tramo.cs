@@ -1039,7 +1039,7 @@ namespace SimuLAN.Clases
         /// <param name="semilla">Número que determina la secuencia de números aleatorios asignada al tramo</param>
         internal void PonerSemilla(int semilla)
         {
-            int num_semilla = this.TInicialProg + this.TFinalProg;
+            int num_semilla = this.TramoBase.Numero_Global;//this.TInicialProg + this.TFinalProg;
             this._rdm = new Random(semilla + num_semilla);
         }
 

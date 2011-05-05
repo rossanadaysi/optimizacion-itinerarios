@@ -83,6 +83,22 @@ namespace InterfazSimuLAN
             get { return new OcultarVentanaEventHandler(Hide); }
         }
 
+        public int VariacionPermitida
+        {
+            get
+            {
+                try
+                {
+                    int variacion = Convert.ToInt32(textBox4.Text);
+                    return variacion;
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
         public int STD_Optimizacion
         {
             get

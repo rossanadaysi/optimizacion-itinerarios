@@ -408,7 +408,7 @@ namespace SimuLAN.Clases.Optimizacion
                                 Dictionary<double, double> curva_atrasos_propagados_globales = new Dictionary<double, double>();
                                 for (int i = -rangoMenos; i <= rangoMas; i = i + salto_variaciones)
                                 {
-                                    double atraso_previo = infoTramo.AtrasoTramoPrevio;
+                                    double atraso_previo = infoTramo.AtrasoTramoPrevio; 
                                     double atraso_propagado = infoTramo.EstimarAtrasoPropagadoAvion(atraso_previo, i);
                                     curva_atrasos_propagados_globales.Add(i, atraso_propagado);
                                 }
@@ -464,8 +464,7 @@ namespace SimuLAN.Clases.Optimizacion
 
                     }
                     else
-                    {
-                        
+                    {                        
                         cantidad_tramos_optimizados = this.TramosPorAvion[avion].Count;
                     }                  
                  }

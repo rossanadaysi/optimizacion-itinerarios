@@ -91,8 +91,10 @@
     <Compile Include="Clases\Optimizacion\Curva.cs" />
     <Compile Include="Clases\Optimizacion\ExplicacionImpuntualidad.cs" />
     <Compile Include="Clases\Optimizacion\InfoTramoParaOptimizacion.cs" />
+    <Compile Include="Clases\Optimizacion\LogOptimizacion.cs" />
     <Compile Include="Clases\Optimizacion\Optimizador.cs" />
     <Compile Include="Clases\Optimizacion\OrganizadorTramos.cs" />
+    <Compile Include="Clases\Optimizacion\ResumenIteracion.cs" />
     <Compile Include="Clases\ParametrosEscalares.cs" />
     <Compile Include="Clases\Recovery\ControladorBackups.cs" />
     <Compile Include="Clases\Recovery\SlotBackup.cs" />

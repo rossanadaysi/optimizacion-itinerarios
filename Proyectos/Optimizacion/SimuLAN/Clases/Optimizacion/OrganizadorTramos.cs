@@ -14,95 +14,6 @@ namespace SimuLAN.Clases.Optimizacion
             get { return _tramos_por_avion; }
         }
 
-        public EstadisticosGenerales PuntualidadBase
-        {
-            get
-            {
-                List<double> valores = new List<double>();
-                foreach (int id_tramo in _tramos.Keys)
-                {
-                    valores.Add(_tramos[id_tramo].ExplicacionImpuntualidadBase.PuntualidadTotal);                 
-                }
-                return new EstadisticosGenerales(valores);
-            }
-        }
-
-        public EstadisticosGenerales ImpuntualidadReaccionariosBase
-        {
-            get
-            {
-                List<double> valores = new List<double>();
-                foreach (int id_tramo in _tramos.Keys)
-                {
-                    valores.Add(_tramos[id_tramo].ExplicacionImpuntualidadBase.ImpuntualidadReaccionarios);
-                }
-                return new EstadisticosGenerales(valores);
-            }
-        }
-
-        public EstadisticosGenerales PuntualidadActual
-        {
-            get
-            {
-                List<double> valores = new List<double>();
-                foreach (int id_tramo in _tramos.Keys)
-                {
-                    valores.Add(_tramos[id_tramo].ExplicacionImpuntualidadActual.PuntualidadTotal);
-                }
-                return new EstadisticosGenerales(valores);
-            }
-        }
-
-        public EstadisticosGenerales ImpuntualidadReaccionariosActual
-        {
-            get
-            {
-                List<double> valores = new List<double>();
-                foreach (int id_tramo in _tramos.Keys)
-                {
-                    valores.Add(_tramos[id_tramo].ExplicacionImpuntualidadActual.ImpuntualidadReaccionarios);
-                }
-                return new EstadisticosGenerales(valores);
-            }
-        }
-
-        public int CantidadTramosOptimizables
-        {
-            get 
-            {
-                int num = 0;
-                foreach (int id in _tramos.Keys)
-                {
-                    if (_tramos[id].TramoOptimizable)
-                    {
-                        num++;
-                    }
-                }
-                return num;
-            }
-        }
-
-        public Dictionary<string,int> CantidadTramosOptimizablesPorAvion
-        {
-            get
-            {
-                Dictionary<string, int> contador = new Dictionary<string, int>();                
-                foreach (string key in _tramos_por_avion.Keys)
-                {
-                    contador.Add(key, 0);
-                   
-                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[key])
-                    {
-                        if (tramo.TramoOptimizable)
-                        {
-                            contador[key]++;
-                        }
-                    }
-                }
-                return contador;
-            }
-        }
-
         public Itinerario ItinerarioBase { get; set; }
 
         public OrganizadorTramos(Itinerario itinerarioBase, int variacion_permitida)
@@ -132,34 +43,84 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        internal Dictionary<int, ExplicacionImpuntualidad> EstimarImpuntualidades(List<Simulacion> replicasBase, DateTime fechaIni, DateTime fechaFin, int std)
+        internal Dictionary<int, ExplicacionImpuntualidad> EstimarImpuntualidades(List<Simulacion> replicasBase, DateTime fechaIni, DateTime fechaFin, List<int> stds)
         {
             Dictionary<int, ExplicacionImpuntualidad> impuntualidades_tramo = new Dictionary<int, ExplicacionImpuntualidad>();
-            Dictionary<int, Dictionary<TipoDisrupcion, double[]>> contadorImpuntualidad = new Dictionary<int, Dictionary<TipoDisrupcion, double[]>>();
+            Dictionary<int, Dictionary<int, Dictionary<TipoDisrupcion, double[]>>> contadorImpuntualidad = new Dictionary<int, Dictionary<int, Dictionary<TipoDisrupcion, double[]>>>();
             Dictionary<int, Dictionary<TipoDisrupcion, double[]>> sumaAtrasosTramo = new Dictionary<int, Dictionary<TipoDisrupcion, double[]>>();
+            List<int> keys_tramos = new List<int>();
+            foreach (int std in stds)
+            {                
+                contadorImpuntualidad.Add(std, new Dictionary<int, Dictionary<TipoDisrupcion, double[]>>());
+                foreach (Simulacion simReplica in replicasBase)
+                {
+                    //Cuenta tramos de impuntualidad para cada estándar y tipo de disrupción                
+                    foreach (Avion a in simReplica.Itinerario.AvionesDictionary.Values)
+                    {
+                        List<Tramo> listaTramos = a.ObtenerListaTramos(a.Tramo_Raiz);
+                        foreach (Tramo tramo in listaTramos)
+                        {
+                            if (tramo.TramoBase.Fecha_Salida >= fechaIni && tramo.TramoBase.Fecha_Salida <= fechaFin)
+                            {
+                                int id = tramo.TramoBase.Numero_Global;
+                                if (!contadorImpuntualidad[std].ContainsKey(id))
+                                {
+                                    contadorImpuntualidad[std].Add(id, new Dictionary<TipoDisrupcion, double[]>());
+                                    foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
+                                    {
+                                        if (tipo != TipoDisrupcion.ADELANTO)
+                                        {
+                                            contadorImpuntualidad[std][id].Add(tipo, new double[2]);
+                                        }
+                                    }
+                                }
+                                int atraso = tramo.TInicialRst - tramo.TInicialProg;
+                                foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
+                                {
+                                    if (tipo != TipoDisrupcion.ADELANTO)
+                                    {
+                                        if (tramo.CausasAtraso.ContainsKey(tipo))
+                                        {
+                                            if (atraso > std)
+                                            {
+                                                contadorImpuntualidad[std][id][tipo][0] += tramo.CausasAtraso[tipo] / ((double)(atraso));
+                                            }
+                                        }
+                                        contadorImpuntualidad[std][id][tipo][1]++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             foreach (Simulacion simReplica in replicasBase)
-            {  
+            {
                 //Cuenta tramos de impuntualidad para cada estándar y tipo de disrupción                
                 foreach (Avion a in simReplica.Itinerario.AvionesDictionary.Values)
                 {
                     List<Tramo> listaTramos = a.ObtenerListaTramos(a.Tramo_Raiz);
                     foreach (Tramo tramo in listaTramos)
                     {
+                       
                         if (tramo.TramoBase.Fecha_Salida >= fechaIni && tramo.TramoBase.Fecha_Salida <= fechaFin)
                         {
                             int id = tramo.TramoBase.Numero_Global;
-                            if (!sumaAtrasosTramo.ContainsKey(id))
+                            if (!keys_tramos.Contains(id))
                             {
-                                contadorImpuntualidad.Add(id, new Dictionary<TipoDisrupcion, double[]>());
+                                keys_tramos.Add(id);
+                            }
+                            if (!sumaAtrasosTramo.ContainsKey(id))
+                            {                                
                                 sumaAtrasosTramo.Add(id, new Dictionary<TipoDisrupcion, double[]>());
                                 foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
                                 {
                                     if (tipo != TipoDisrupcion.ADELANTO)
-                                    {
-                                        contadorImpuntualidad[id].Add(tipo, new double[2]);
+                                    {                                        
                                         sumaAtrasosTramo[id].Add(tipo, new double[2]);
                                     }
-                                }   
+                                }
                             }
                             int atraso = tramo.TInicialRst - tramo.TInicialProg;
                             foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
@@ -168,35 +129,44 @@ namespace SimuLAN.Clases.Optimizacion
                                 {
                                     if (tramo.CausasAtraso.ContainsKey(tipo))
                                     {
-                                        if (atraso > std)
-                                        {
-                                            contadorImpuntualidad[id][tipo][0] += tramo.CausasAtraso[tipo] / ((double)(atraso));
-                                        }
                                         sumaAtrasosTramo[id][tipo][0] += tramo.CausasAtraso[tipo];
-                                    }
-                                    contadorImpuntualidad[id][tipo][1]++;
+                                    }                                    
                                     sumaAtrasosTramo[id][tipo][1]++;
                                 }
-                            }               
+                            }
                         }
                     }
                 }
             }
-
-            foreach (int id_tramo in contadorImpuntualidad.Keys)
-            {
+            
+            foreach (int id_tramo in keys_tramos)
+            {                
                 ExplicacionImpuntualidad explicacionImpuntualidad = new ExplicacionImpuntualidad();
+                impuntualidades_tramo.Add(id_tramo, explicacionImpuntualidad);
+                foreach (int std in contadorImpuntualidad.Keys)
+                {
+                    Dictionary<TipoDisrupcion, double> impuntualidad_tramo = new Dictionary<TipoDisrupcion, double>();
+                    foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
+                    {
+                        if (tipo != TipoDisrupcion.ADELANTO)
+                        {
+                            double impuntualidad_promedio = contadorImpuntualidad[std][id_tramo][tipo][0] / contadorImpuntualidad[std][id_tramo][tipo][1];                            
+                            impuntualidad_tramo.Add(tipo, impuntualidad_promedio);
+
+                        }
+                    }
+                    explicacionImpuntualidad.AgregarDisrupcion(std, impuntualidad_tramo);
+                }
                 foreach (TipoDisrupcion tipo in Enum.GetValues(typeof(TipoDisrupcion)))
                 {
                     if (tipo != TipoDisrupcion.ADELANTO)
-                    {
-                        double impuntualidad_promedio = contadorImpuntualidad[id_tramo][tipo][0] / contadorImpuntualidad[id_tramo][tipo][1];
-                        double atraso_promedio =  sumaAtrasosTramo[id_tramo][tipo][0] / sumaAtrasosTramo[id_tramo][tipo][1];
-                        explicacionImpuntualidad.AgregarDisrupcion(tipo, impuntualidad_promedio, atraso_promedio );
+                    {                        
+                        double atraso_promedio = sumaAtrasosTramo[id_tramo][tipo][0] / sumaAtrasosTramo[id_tramo][tipo][1];
+                        explicacionImpuntualidad.AgregarAtraso(tipo, atraso_promedio);
                     }
                 }
-                impuntualidades_tramo.Add(id_tramo, explicacionImpuntualidad);                
             }
+            
             return impuntualidades_tramo;
         }
 
@@ -379,7 +349,7 @@ namespace SimuLAN.Clases.Optimizacion
                 int contador = 0;
                 foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
                 {
-                    infoTramoOptimizado.Add(contador, !infoTramo.Optimizable);
+                    infoTramoOptimizado.Add(contador, !infoTramo.Optimizable(0));
                     contador++;
                 }
                 int cantidad_tramos_optimizados = 0;
@@ -473,7 +443,7 @@ namespace SimuLAN.Clases.Optimizacion
 
         }
 
-        internal void DeshacerCambiosQueEmpeoranPuntualidad(out int cambios, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial,Dictionary<int,int> variacion_penultima, bool revisaPrimero)
+        internal void DeshacerCambiosQueEmpeoranPuntualidad(out int cambios, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial,Dictionary<int,int> variacion_penultima, bool revisaPrimero,int std)
         {
             //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
             cambios = 0;
@@ -486,15 +456,15 @@ namespace SimuLAN.Clases.Optimizacion
                 foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
                 {
                     int id_tramo = tramo.IdTramo;
-                    double impuntualidad_ultima = historial[index_ultimo][id_tramo].ImpuntualidadTotal;
-                    double impuntualidad_penultima = historial[index_penultimo][id_tramo].ImpuntualidadTotal;
-                    double impuntualidad_inicial = historial[index_ini][id_tramo].ImpuntualidadTotal;
+                    double impuntualidad_ultima = historial[index_ultimo][id_tramo].ImpuntualidadTotal[std];
+                    double impuntualidad_penultima = historial[index_penultimo][id_tramo].ImpuntualidadTotal[std];
+                    double impuntualidad_inicial = historial[index_ini][id_tramo].ImpuntualidadTotal[std];
                     InfoTramoParaOptimizacion tramo_siguiente = tramo.TramoSiguiente;
                     while (tramo_siguiente!=null && tramo_siguiente.VariacionAplicada == 0)
                     {
-                        impuntualidad_ultima += historial[index_ultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal;
-                        impuntualidad_penultima += historial[index_penultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal;
-                        impuntualidad_inicial += historial[index_ini][tramo_siguiente.IdTramo].ImpuntualidadTotal;
+                        impuntualidad_ultima += historial[index_ultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal[std];
+                        impuntualidad_penultima += historial[index_penultimo][tramo_siguiente.IdTramo].ImpuntualidadTotal[std];
+                        impuntualidad_inicial += historial[index_ini][tramo_siguiente.IdTramo].ImpuntualidadTotal[std];
                         tramo_siguiente = tramo_siguiente.TramoSiguiente;
                     }
                     //Opcion: agregar rango de tolerancia
@@ -566,7 +536,7 @@ namespace SimuLAN.Clases.Optimizacion
         }
 
 
-        internal void VolverAEstadoDeMejorPuntualidad(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2)
+        internal void VolverAEstadoDeMejorPuntualidad(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2,int std_objetivo)
         {
             //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
             
@@ -574,8 +544,8 @@ namespace SimuLAN.Clases.Optimizacion
             foreach (string id_avion in _tramos_por_avion.Keys)
             {
                 double impuntualidad_minima_1, impuntualidad_minima_2;
-                int iteracion_mejor_puntualidad_1 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_1, id_avion,out impuntualidad_minima_1);
-                int iteracion_mejor_puntualidad_2 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_2, id_avion, out impuntualidad_minima_2);
+                int iteracion_mejor_puntualidad_1 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_1, id_avion, out impuntualidad_minima_1, std_objetivo);
+                int iteracion_mejor_puntualidad_2 = ObtenerIteracionDeMejorPuntualidad(historial_puntualidad_2, id_avion, out impuntualidad_minima_2, std_objetivo);
                 if (impuntualidad_minima_1 < impuntualidad_minima_2)
                 {
                     foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
@@ -609,7 +579,7 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        internal void VolverAEstadoDeMenorAtrasoPropagado(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2)
+        internal void VolverAEstadoDeMenorAtrasoPropagado(LogOptimizacion log_proceso)
         {
             //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
 
@@ -617,16 +587,16 @@ namespace SimuLAN.Clases.Optimizacion
             foreach (string id_avion in _tramos_por_avion.Keys)
             {
                 double atraso_minimo_1, atraso_minimo_2;
-                int iteracion_mejor_atraso_1 = ObtenerIteracionDeMenorAtraso(historial_puntualidad_1, id_avion, out atraso_minimo_1);
-                int iteracion_mejor_atraso_2 = ObtenerIteracionDeMenorAtraso(historial_puntualidad_2, id_avion, out atraso_minimo_2);
+                int iteracion_mejor_atraso_1 = ObtenerIteracionDeMenorAtraso(log_proceso.HistorialImpuntualidad[FaseOptimizacion.Optimizacion], id_avion, out atraso_minimo_1);
+                int iteracion_mejor_atraso_2 = ObtenerIteracionDeMenorAtraso(log_proceso.HistorialImpuntualidad[FaseOptimizacion.Ajuste], id_avion, out atraso_minimo_2);
                 if (atraso_minimo_1 < atraso_minimo_2)
                 {
                     foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
                     {
                         int id_tramo = tramo.IdTramo;
-                        if (historial_variaciones_1.ContainsKey(iteracion_mejor_atraso_1))
+                        if (log_proceso.HistorialVariaciones[FaseOptimizacion.Optimizacion].ContainsKey(iteracion_mejor_atraso_1))
                         {
-                            tramo.VariacionAplicada = historial_variaciones_1[iteracion_mejor_atraso_1][id_tramo];
+                            tramo.VariacionAplicada = log_proceso.HistorialVariaciones[FaseOptimizacion.Optimizacion][iteracion_mejor_atraso_1][id_tramo];
                         }
                         else
                         {
@@ -639,9 +609,9 @@ namespace SimuLAN.Clases.Optimizacion
                     foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
                     {
                         int id_tramo = tramo.IdTramo;
-                        if (historial_variaciones_2.ContainsKey(iteracion_mejor_atraso_2))
+                        if (log_proceso.HistorialVariaciones[FaseOptimizacion.Ajuste].ContainsKey(iteracion_mejor_atraso_2))
                         {
-                            tramo.VariacionAplicada = historial_variaciones_2[iteracion_mejor_atraso_2][id_tramo];
+                            tramo.VariacionAplicada = log_proceso.HistorialVariaciones[FaseOptimizacion.Ajuste][iteracion_mejor_atraso_2][id_tramo];
                         }
                         else
                         {
@@ -653,7 +623,7 @@ namespace SimuLAN.Clases.Optimizacion
         }
 
 
-        private int ObtenerIteracionDeMejorPuntualidad(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double impuntualidad_minima)
+        private int ObtenerIteracionDeMejorPuntualidad(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double impuntualidad_minima,int std_objetivo)
         {
             Dictionary<int, double> impuntualidad_acumulada = new Dictionary<int, double>();
             int total_tramos = this._tramos_por_avion[id_avion].Count;
@@ -662,7 +632,7 @@ namespace SimuLAN.Clases.Optimizacion
                 impuntualidad_acumulada.Add(i, 0);
                 foreach (InfoTramoParaOptimizacion tramo in this._tramos_por_avion[id_avion])
                 {
-                    impuntualidad_acumulada[i]+= historial_puntualidad[i][tramo.IdTramo].ImpuntualidadTotal;
+                    impuntualidad_acumulada[i]+= historial_puntualidad[i][tramo.IdTramo].ImpuntualidadTotal[std_objetivo];
                 }
                 impuntualidad_acumulada[i] /= total_tramos;
             }

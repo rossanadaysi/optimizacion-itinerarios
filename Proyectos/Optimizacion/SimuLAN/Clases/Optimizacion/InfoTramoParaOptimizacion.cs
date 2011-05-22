@@ -47,12 +47,9 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        public bool Optimizable
+        public bool Optimizable(int std_objetivo)
         {
-            get
-            {
-                return _tramo_abierto && TramoOptimizable;
-            }
+            return _tramo_abierto && TramoOptimizable(std_objetivo);
         }
 
         public InfoTramoParaOptimizacion TramoPrevio
@@ -97,9 +94,9 @@ namespace SimuLAN.Clases.Optimizacion
             set { _variacion_menos_maxima_comercial = value; }
         }
 
-        public bool TramoOptimizable
+        public bool TramoOptimizable(int std_objetivo)
         {
-            get { return _variacion_menos_maxima_comercial + _variacion_mas_maxima_comercial > 0 && _explicacion_impuntualidad_base.ImpuntualidadTotal > 0; }
+            return _variacion_menos_maxima_comercial + _variacion_mas_maxima_comercial > 0 && _explicacion_impuntualidad_base.ImpuntualidadTotal[std_objetivo] > 0;
         }
 
         public int VariacionAplicadaTramoPrevio
@@ -164,7 +161,7 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        internal bool ConvieneOptimizar()
+        internal bool ConvieneOptimizar(int std_objetivo)
         {
             if (_explicacion_impuntualidad_base != null)
             {
@@ -172,8 +169,8 @@ namespace SimuLAN.Clases.Optimizacion
                 {
                     if (_explicacion_impuntualidad_previa != null)
                     {
-                        bool mejora_cr_previa = _explicacion_impuntualidad_previa.ImpuntualidadReaccionarios >= _explicacion_impuntualidad_actual.ImpuntualidadReaccionarios;
-                        bool mejora_cr_base = _explicacion_impuntualidad_previa.ImpuntualidadReaccionarios >= _explicacion_impuntualidad_actual.ImpuntualidadReaccionarios;
+                        bool mejora_cr_previa = _explicacion_impuntualidad_previa.ImpuntualidadReaccionarios[std_objetivo] >= _explicacion_impuntualidad_actual.ImpuntualidadReaccionarios[std_objetivo];
+                        bool mejora_cr_base = _explicacion_impuntualidad_previa.ImpuntualidadReaccionarios[std_objetivo] >= _explicacion_impuntualidad_actual.ImpuntualidadReaccionarios[std_objetivo];
                         //bool reaccionariosPredominantes = _explicacion_impuntualidad_actual.RazonReaccionarios > 0.75;
                         return mejora_cr_previa && mejora_cr_base;
                     }

@@ -15,7 +15,7 @@ namespace SimuLAN.Clases.Optimizacion
         /// <summary>
         /// Impuntualidad promedio por disrupción
         /// </summary>
-        Dictionary<TipoDisrupcion, double> _impuntualidad_por_disrupcion;
+        Dictionary<int, Dictionary<TipoDisrupcion,double>> _impuntualidad_por_disrupcion_std;
 
         #endregion
 
@@ -63,7 +63,6 @@ namespace SimuLAN.Clases.Optimizacion
         }
         public double AtrasoTotal
         {
-
             get
             {
                 double atraso = 0;
@@ -74,92 +73,68 @@ namespace SimuLAN.Clases.Optimizacion
                 return atraso;               
             }
         }
-        public double ImpuntualidadReaccionarios
+        public Dictionary<int,double> ImpuntualidadReaccionarios
         {
             get 
-            {
-                double impuntualidad = 0;
+            {                
+                Dictionary<int, double> impuntualidades_por_std = new Dictionary<int,double>();
                 List<TipoDisrupcion> reaccionarios = new List<TipoDisrupcion>();
                 reaccionarios.Add(TipoDisrupcion.RC);
                 reaccionarios.Add(TipoDisrupcion.RC_PAX);
                 reaccionarios.Add(TipoDisrupcion.RC_TRIP);
                 reaccionarios.Add(TipoDisrupcion.HBT);
+                
                 foreach (TipoDisrupcion t in reaccionarios)
                 {
-                    impuntualidad += ObtenerImpuntualidad(t);
+                    foreach (int std in _impuntualidad_por_disrupcion_std.Keys)
+                    {
+                        impuntualidades_por_std.Add(std, ObtenerImpuntualidad(t, std));
+                    }
                 }
-                return impuntualidad;
+                return impuntualidades_por_std;
             }
         }
-        public double ImpuntualidadSinReaccionarios
+        public Dictionary<int,double> ImpuntualidadSinReaccionarios
         {
             get
             {
-                return ImpuntualidadTotal - ImpuntualidadReaccionarios;
-            }
-        }
-        public double ImpuntualidadTotal
-        {
-            get
-            {
-                double impuntualidad = 0;
-                foreach (double valor in _impuntualidad_por_disrupcion.Values)
+                Dictionary<int, double> impuntualidad_sin_reaccionarios = new Dictionary<int, double>();
+                Dictionary<int, double> impuntualidad_total = ImpuntualidadTotal;
+                Dictionary<int, double> impuntualidad_reaccionarios = ImpuntualidadReaccionarios;
+                foreach (int std in impuntualidad_total.Keys)
                 {
-                    impuntualidad += valor;
+                    impuntualidad_sin_reaccionarios.Add(std, impuntualidad_total[std] - impuntualidad_reaccionarios[std]);
                 }
-                return impuntualidad;
+                return impuntualidad_sin_reaccionarios;
             }
         }
-        public double PuntualidadTotal
+        public Dictionary<int, double> ImpuntualidadTotal
         {
             get
             {
-                return 1 - ImpuntualidadTotal;
-            }
-        }
-        public double RazonAtrasoReaccionarios
-        {
-            get
-            {
-                if (AtrasoTotal > 0)
+                Dictionary<int, double> impuntualidad_std = new Dictionary<int, double>();
+                foreach (int std in _impuntualidad_por_disrupcion_std.Keys)
                 {
-                    return AtrasoReaccionarios / AtrasoTotal;
+                    impuntualidad_std.Add(std, 0);
+                    foreach (TipoDisrupcion tipo in _impuntualidad_por_disrupcion_std.Keys)
+                    {
+                        impuntualidad_std[std] += _impuntualidad_por_disrupcion_std[std][tipo];
+                    }
                 }
-                else
-                {
-                    return 0;
-                }
+                return impuntualidad_std;
             }
         }
-        public double RazonImpuntualidadReaccionarios
+        public Dictionary<int, double> PuntualidadTotal
         {
             get
             {
-                if (ImpuntualidadTotal > 0)
+                Dictionary<int, double> puntualidad = new Dictionary<int, double>();
+                Dictionary<int, double> impuntualidad = ImpuntualidadTotal;
+                foreach (int std in impuntualidad.Keys)
                 {
-                    return ImpuntualidadReaccionarios / ImpuntualidadTotal;
+                    impuntualidad.Add(std, 1 - impuntualidad[std]);
                 }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
-        public bool TieneAtrasoReaccionario
-        {
-            get
-            {
-                return _impuntualidad_por_disrupcion.ContainsKey(TipoDisrupcion.RC)
-                    || _impuntualidad_por_disrupcion.ContainsKey(TipoDisrupcion.RC_PAX)
-                    || _impuntualidad_por_disrupcion.ContainsKey(TipoDisrupcion.RC_TRIP)
-                    || _impuntualidad_por_disrupcion.ContainsKey(TipoDisrupcion.HBT);
-            }
-        }
-        public bool TieneAtrasos
-        {
-            get
-            {
-                return _impuntualidad_por_disrupcion.Count > 0;
+                return puntualidad;
             }
         }
 
@@ -169,7 +144,7 @@ namespace SimuLAN.Clases.Optimizacion
 
         public ExplicacionImpuntualidad()
         {
-            this._impuntualidad_por_disrupcion = new Dictionary<TipoDisrupcion, double>();
+            this._impuntualidad_por_disrupcion_std = new Dictionary<int, Dictionary<TipoDisrupcion, double>>();
             this._atraso_por_disrupcion = new Dictionary<TipoDisrupcion, double>();
         }
 
@@ -177,18 +152,31 @@ namespace SimuLAN.Clases.Optimizacion
 
         #region Métodos
 
-        internal void AgregarDisrupcion(TipoDisrupcion tipo, double impuntualidad, double atraso)
+        internal void AgregarAtraso(TipoDisrupcion tipo, double atraso)
         {
-            if (impuntualidad > 0)
+            if (atraso > 0)
             {
-                this._impuntualidad_por_disrupcion.Add(tipo, impuntualidad);
                 this._atraso_por_disrupcion.Add(tipo, atraso);
+            }
+        }
+        internal void AgregarDisrupcion(int std, Dictionary<TipoDisrupcion,double> impuntualidad)
+        {
+            foreach (TipoDisrupcion tipo in impuntualidad.Keys)
+            {
+                if (impuntualidad[tipo] > 0)
+                {
+                    if (!_impuntualidad_por_disrupcion_std.ContainsKey(std))
+                    {
+                        this._impuntualidad_por_disrupcion_std.Add(std, new Dictionary<TipoDisrupcion, double>());
+                    }
+                    this._impuntualidad_por_disrupcion_std[std].Add(tipo, impuntualidad[tipo]);
+                }
             }
         }
         private string CausasAtrasoSeparadasPor(string separador)
         {
             StringBuilder sb = new StringBuilder();
-            foreach (TipoDisrupcion tipo in _impuntualidad_por_disrupcion.Keys)
+            foreach (TipoDisrupcion tipo in _impuntualidad_por_disrupcion_std.Keys)
             {
                 sb.Append(tipo.ToString() + separador);
             }
@@ -216,11 +204,13 @@ namespace SimuLAN.Clases.Optimizacion
                 return 0;
             }
         }
-        public double ObtenerImpuntualidad(TipoDisrupcion tipo)
+        public double ObtenerImpuntualidad(TipoDisrupcion tipo,int std)
         {
-            if (_impuntualidad_por_disrupcion != null && _impuntualidad_por_disrupcion.ContainsKey(tipo))
+            if (_impuntualidad_por_disrupcion_std != null 
+                && _impuntualidad_por_disrupcion_std.ContainsKey(std)
+                && _impuntualidad_por_disrupcion_std[std].ContainsKey(tipo))
             {
-                return _impuntualidad_por_disrupcion[tipo];
+                return _impuntualidad_por_disrupcion_std[std][tipo];
             }
             else
             {

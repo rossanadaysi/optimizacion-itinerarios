@@ -470,6 +470,7 @@ namespace InterfazSimuLAN
             }
             Optimizador optimizador = new Optimizador(_itinerarioBase, _parametrosBase, _modeloDisrupcionesBase, _stds,0, _menuSimulacionNormal.FechaInicioReportes, _menuSimulacionNormal.FechaTerminoReportes, _menuSimulacionNormal.VariacionPermitida);
             optimizador.OptimizarReaccionarios2(cambiarVista, _enviarMensajeSimulacion, actualizarPorcentaje, ref _simulacion_cancelada,_menuSimulacionNormal.Iteraciones_Optimizacion);
+            optimizador.ImprimirReportes(_outputPath);
             if (!_simulacion_cancelada)
             {               
                 cambiarVista();

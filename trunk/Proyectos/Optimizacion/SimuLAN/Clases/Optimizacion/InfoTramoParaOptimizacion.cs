@@ -96,7 +96,10 @@ namespace SimuLAN.Clases.Optimizacion
 
         public bool TramoOptimizable(int std_objetivo)
         {
-            return _variacion_menos_maxima_comercial + _variacion_mas_maxima_comercial > 0 && _explicacion_impuntualidad_base.ImpuntualidadTotal[std_objetivo] > 0;
+            return _variacion_menos_maxima_comercial + _variacion_mas_maxima_comercial > 0 
+                && _explicacion_impuntualidad_base.ImpuntualidadTotal!=null 
+                &&  _explicacion_impuntualidad_base.ImpuntualidadTotal.ContainsKey(std_objetivo) 
+                && _explicacion_impuntualidad_base.ImpuntualidadTotal[std_objetivo] > 0;
         }
 
         public int VariacionAplicadaTramoPrevio

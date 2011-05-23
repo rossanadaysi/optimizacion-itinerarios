@@ -88,7 +88,12 @@ namespace SimuLAN.Clases.Optimizacion
                 {
                     foreach (int std in _impuntualidad_por_disrupcion_std.Keys)
                     {
-                        impuntualidades_por_std.Add(std, ObtenerImpuntualidad(t, std));
+                        if (!impuntualidades_por_std.ContainsKey(std))
+                        {
+                            impuntualidades_por_std.Add(std, 0);
+                        }
+                        double impuntualidad_tipo = ObtenerImpuntualidad(t, std);
+                        impuntualidades_por_std[std] += impuntualidad_tipo;
                     }
                 }
                 return impuntualidades_por_std;
@@ -116,7 +121,7 @@ namespace SimuLAN.Clases.Optimizacion
                 foreach (int std in _impuntualidad_por_disrupcion_std.Keys)
                 {
                     impuntualidad_std.Add(std, 0);
-                    foreach (TipoDisrupcion tipo in _impuntualidad_por_disrupcion_std.Keys)
+                    foreach (TipoDisrupcion tipo in _impuntualidad_por_disrupcion_std[std].Keys)
                     {
                         impuntualidad_std[std] += _impuntualidad_por_disrupcion_std[std][tipo];
                     }
@@ -188,9 +193,9 @@ namespace SimuLAN.Clases.Optimizacion
             sb.Append(ImpuntualidadTotal);
             sb.Append("\t" + ImpuntualidadReaccionarios);
             sb.Append("\t" + ImpuntualidadSinReaccionarios);
+            sb.Append("\t" + AtrasoTotal);
             sb.Append("\t" + AtrasoReaccionarios);
             sb.Append("\t" + AtrasoSinReaccionarios);
-            sb.Append("\t" + AtrasoTotal);
             return sb.ToString();
         }
         private double ObtenerAtraso(TipoDisrupcion tipo)

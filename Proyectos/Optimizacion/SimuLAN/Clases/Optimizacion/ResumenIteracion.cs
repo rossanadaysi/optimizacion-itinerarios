@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace SimuLAN.Clases.Optimizacion
@@ -25,7 +24,20 @@ namespace SimuLAN.Clases.Optimizacion
         private double _cantidad_variaciones_positivas;
         private double _cantidad_variaciones_negativas;
 
-
+        public int Iteracion
+        {
+            get
+            {
+                return _numero_iteracion;
+            }
+        }
+        public FaseOptimizacion Fase
+        {
+            get
+            {
+                return _fase;
+            }
+        }
         public double CantidadTramosNoVariados
         {
             get
@@ -139,6 +151,27 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
+        public static ResumenIteracion ConstruirResumenIteracion(FaseOptimizacion fase, int numero_iteracion, Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>>> historial_impuntualidad, Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, int>>> historial_variaciones)
+        {
+            if (historial_impuntualidad.ContainsKey(fase) && historial_impuntualidad[fase].ContainsKey(numero_iteracion))
+            {
+                if (historial_variaciones.ContainsKey(fase) && historial_variaciones[fase].ContainsKey(numero_iteracion))
+                {
+                    return new ResumenIteracion(fase, numero_iteracion, historial_impuntualidad[fase][numero_iteracion], historial_variaciones[fase][numero_iteracion]);
+                }
+                else
+                {
+                    return new ResumenIteracion(fase, numero_iteracion, historial_impuntualidad[fase][numero_iteracion]);
+                }
+            }
+            else 
+            {
+                throw new Exception("Error al construir resumen iteracion");                
+            };
+            return null;
+
+        }
+
         public ResumenIteracion(FaseOptimizacion fase, int numero_iteracion, Dictionary<int, ExplicacionImpuntualidad> impuntualidades, Dictionary<int, int> variaciones)
         {
             this._impuntualidades = impuntualidades;
@@ -230,10 +263,19 @@ namespace SimuLAN.Clases.Optimizacion
 
         private void EstimarImpuntualidades()
         {
+
+            this._impuntualidad_total = new Dictionary<int, double>();
+            this._impuntualidad_reaccionarios = new Dictionary<int, double>();
+            this._impuntualidad_no_reaccionarios = new Dictionary<int, double>();
+            List<int> stds = new List<int>();
             foreach (int id_tramo in _impuntualidades.Keys)
             {
                 foreach (int std in _impuntualidades[id_tramo].ImpuntualidadTotal.Keys)
                 {
+                    if (!stds.Contains(std))
+                    {
+                        stds.Add(std);
+                    }
                     if (!_impuntualidad_total.ContainsKey(std))
                     {
                         _impuntualidad_total.Add(std, 0);
@@ -246,7 +288,7 @@ namespace SimuLAN.Clases.Optimizacion
                 }
             }
             int total_tramos = _impuntualidades.Count;
-            foreach (int std in _impuntualidad_total.Keys)
+            foreach (int std in stds)
             {
                 _impuntualidad_total[std] /= total_tramos;
                 _impuntualidad_reaccionarios[std] /= total_tramos;
@@ -254,12 +296,12 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        private void ImprimirResumen(List<int> dominio, List<int> stds)
+        internal StringBuilder ImprimirResumen(List<int> dominio, List<int> stds)
         {
             StringBuilder sb = new StringBuilder();
             string tab = "\t";
-            sb.Append(_numero_iteracion.ToString());
-            sb.Append(tab + _fase.ToString());
+            sb.Append(_fase.ToString());
+            sb.Append(tab + _numero_iteracion.ToString());      
             sb.Append(tab + _atraso_total.ToString());
             sb.Append(tab + _atraso_reaccionario_total.ToString());
             sb.Append(tab + _atraso_no_reaccionario_total.ToString());
@@ -279,9 +321,45 @@ namespace SimuLAN.Clases.Optimizacion
             sb.Append(tab + _promedio_variaciones_negativos.ToString());
             foreach (int variacion in dominio)
             {
-                sb.Append(tab + _frecuencias_de_variaciones[variacion].ToString());
+                if (_frecuencias_de_variaciones.ContainsKey(variacion))
+                {
+                    sb.Append(tab + _frecuencias_de_variaciones[variacion].ToString());
+                }
+                else
+                {
+                    sb.Append(tab + "0");
+                }
             }
+            return sb;
         }
 
+        internal StringBuilder ImprimirResumenVertical(List<int> dominio, List<int> stds)
+        {
+            StringBuilder sb = new StringBuilder();
+            string tab = "\t";
+            sb.AppendLine("Fase" + tab +_fase.ToString());
+            sb.AppendLine("Iteracion" + tab + _numero_iteracion.ToString());
+            sb.AppendLine("Atraso total" + tab + _atraso_total.ToString());
+            sb.AppendLine("Atraso reaccionario" + tab + _atraso_reaccionario_total.ToString());
+            sb.AppendLine("Atraso no reaccionario" + tab + _atraso_no_reaccionario_total.ToString());
+            foreach (int std in stds)
+            {
+                sb.AppendLine("Impuntualidad total STD" + std + tab + _impuntualidad_total[std].ToString());
+                sb.AppendLine("Impuntualidad reaccionarios STD" + std + tab + _impuntualidad_reaccionarios[std].ToString());
+                sb.AppendLine("Impuntualidad no reaccionarios STD" + std + tab + _impuntualidad_no_reaccionarios[std].ToString());
+            }
+            foreach (int variacion in dominio)
+            {
+                if (_frecuencias_de_variaciones.ContainsKey(variacion))
+                {
+                    sb.AppendLine("Variaciones" + variacion + tab + _frecuencias_de_variaciones[variacion].ToString());
+                }
+                else
+                {
+                    sb.AppendLine("Variaciones" + variacion + tab + "0");
+                }
+            }
+            return sb;
+        }
     }
 }

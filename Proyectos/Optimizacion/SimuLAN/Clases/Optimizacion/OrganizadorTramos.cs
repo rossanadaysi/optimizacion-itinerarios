@@ -580,43 +580,56 @@ namespace SimuLAN.Clases.Optimizacion
         }
 
         internal void VolverAEstadoDeMenorAtrasoPropagado(LogOptimizacion log_proceso)
-        {
-            //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
-
-            //Estudiar forma de deshacer: mirando a tramo previo o no.
+        {          
             foreach (string id_avion in _tramos_por_avion.Keys)
             {
-                double atraso_minimo_1, atraso_minimo_2;
-                int iteracion_mejor_atraso_1 = ObtenerIteracionDeMenorAtraso(log_proceso.HistorialImpuntualidad[FaseOptimizacion.Optimizacion], id_avion, out atraso_minimo_1);
-                int iteracion_mejor_atraso_2 = ObtenerIteracionDeMenorAtraso(log_proceso.HistorialImpuntualidad[FaseOptimizacion.Ajuste], id_avion, out atraso_minimo_2);
-                if (atraso_minimo_1 < atraso_minimo_2)
+                FaseOptimizacion mejor_fase;
+                int mejor_iteracion;
+                ObtenerIteracionDeMenorAtraso(log_proceso.HistorialImpuntualidad, id_avion, out mejor_fase,out mejor_iteracion);
+                foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
                 {
-                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    int id_tramo = tramo.IdTramo;
+                    if (log_proceso.HistorialVariaciones.ContainsKey(mejor_fase) && log_proceso.HistorialVariaciones[mejor_fase].ContainsKey(mejor_iteracion))
                     {
-                        int id_tramo = tramo.IdTramo;
-                        if (log_proceso.HistorialVariaciones[FaseOptimizacion.Optimizacion].ContainsKey(iteracion_mejor_atraso_1))
-                        {
-                            tramo.VariacionAplicada = log_proceso.HistorialVariaciones[FaseOptimizacion.Optimizacion][iteracion_mejor_atraso_1][id_tramo];
-                        }
-                        else
-                        {
-                            tramo.VariacionAplicada = 0;
-                        }
+                        tramo.VariacionAplicada = log_proceso.HistorialVariaciones[mejor_fase][mejor_iteracion][id_tramo];
                     }
-                }
-                else
-                {
-                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[id_avion])
+                    else
                     {
-                        int id_tramo = tramo.IdTramo;
-                        if (log_proceso.HistorialVariaciones[FaseOptimizacion.Ajuste].ContainsKey(iteracion_mejor_atraso_2))
-                        {
-                            tramo.VariacionAplicada = log_proceso.HistorialVariaciones[FaseOptimizacion.Ajuste][iteracion_mejor_atraso_2][id_tramo];
-                        }
-                        else
-                        {
-                            tramo.VariacionAplicada = 0;
-                        }
+                        tramo.VariacionAplicada = 0;
+                    }
+                }                
+            }
+        }
+
+        private void ObtenerIteracionDeMenorAtraso(Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>>> historial_puntualidad, string id_avion, out FaseOptimizacion mejor_fase, out int mejor_iteracion)
+        {
+            mejor_fase = FaseOptimizacion.Inicio;
+            mejor_iteracion = -1;
+            Dictionary<FaseOptimizacion, Dictionary<int, double>> atraso_acumulado = new Dictionary<FaseOptimizacion, Dictionary<int, double>>();
+            int total_tramos = this._tramos_por_avion[id_avion].Count;
+            foreach (FaseOptimizacion fase in historial_puntualidad.Keys)
+            {
+                atraso_acumulado.Add(fase, new Dictionary<int,double>());
+                foreach (int i in historial_puntualidad[fase].Keys)
+                {
+                    atraso_acumulado[fase].Add(i, 0);
+                    foreach (InfoTramoParaOptimizacion tramo in this._tramos_por_avion[id_avion])
+                    {
+                        atraso_acumulado[fase][i] += historial_puntualidad[fase][i][tramo.IdTramo].AtrasoTotal;
+                    }
+                    atraso_acumulado[fase][i] /= total_tramos;
+                }
+            }
+            double minimo = double.MaxValue;
+            foreach (FaseOptimizacion fase in historial_puntualidad.Keys)
+            {
+                foreach (int index in atraso_acumulado[fase].Keys)
+                {
+                    if (atraso_acumulado[fase][index] < minimo)
+                    {
+                        minimo = atraso_acumulado[fase][index];
+                        mejor_iteracion = index;
+                        mejor_fase = fase;
                     }
                 }
             }

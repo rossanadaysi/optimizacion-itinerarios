@@ -6,6 +6,7 @@ using System.IO;
 
 namespace SimuLAN.Clases.Optimizacion
 {
+    public enum CriterioOptimizacion { MinutosAtraso, EstandarPuntualidad}
     public class Optimizador
     {
         private List<int> _stds;
@@ -15,6 +16,8 @@ namespace SimuLAN.Clases.Optimizacion
         private DateTime _fecha_fin;
 
         private DateTime _fecha_ini;
+
+        private int _variacion_permitida;
 
         private LogOptimizacion _log_info_optimizacion;
 
@@ -34,6 +37,7 @@ namespace SimuLAN.Clases.Optimizacion
             this.Parametros = parametros;
             this.Disrupciones = disrupciones;
             this._stds = stds;
+            this._variacion_permitida = variacion_permitida;
             this._fecha_ini = fechaIni;
             this._fecha_fin = fechaFin;
             this._tramos_optimizacion = new OrganizadorTramos(itinerario_base, variacion_permitida);
@@ -68,7 +72,7 @@ namespace SimuLAN.Clases.Optimizacion
 
             while (iteraciones < total_iteraciones)
             {
-                int variaciones,cambios;
+                int variaciones;
                 this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado(out variaciones,_salto_variaciones);
                 //Aplica variaciones en itinerario (siempre que no viole restricciones)
                 manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
@@ -93,25 +97,22 @@ namespace SimuLAN.Clases.Optimizacion
                 {
                     //this._tramos_optimizacion.DeshacerCambiosQueEmpeoranAtrasoPropagado(out cambios, this._historial_puntualidades_optimizacion, _historial_variaciones_optimizacion[iteraciones - 1], true);
                 }
-                else
+                else if(iteraciones % 2 == 0)
                 {
                     this._tramos_optimizacion.VolverAEstadoDeMenorAtrasoPropagado(_log_info_optimizacion);
+                    manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
+                    List<Simulacion> replicas_sim_2 = manager.SimularNormal();
+                    Dictionary<int, ExplicacionImpuntualidad> impuntualidades_sim_2 = _tramos_optimizacion.EstimarImpuntualidades(replicas_sim_2, _fecha_ini, _fecha_fin, _stds);
+                    Dictionary<int, int> variaciones_2 = _tramos_optimizacion.ObtenerVariacionesPropuestas();
+                    _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Ajuste, variaciones_2);
+                    _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Ajuste, impuntualidades_sim_2);                
+
                 }
-                manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
-                List<Simulacion> replicas_sim_2 = manager.SimularNormal();
-                Dictionary<int, ExplicacionImpuntualidad> impuntualidades_sim_2 = _tramos_optimizacion.EstimarImpuntualidades(replicas_sim_2, _fecha_ini, _fecha_fin, _stds);
-                Dictionary<int, int> variaciones_2 = _tramos_optimizacion.ObtenerVariacionesPropuestas();
-                _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Ajuste, variaciones_2);
-                _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Ajuste, impuntualidades_sim_2);                
+                
             }
-            //Agregar los tramos previos (siempre que no estén en la lista): estos son los que generan el atraso reaccionario, y deben anticiparse
-
-            //Dividir la lista en una lista para cada avión, y reordenar cronológicamente
-
-            //Con LTFM, iterar:
-                //Llevar al máximo las variaciones desde el primer tramo al último de cada avión, de manera que se minimice el atraso reaccionario. Los sin reaccionario, se adelantan, y los con reaccionario, se retrasan.
-            //ExportarHistorialPuntualidades2(@"C:\Users\Rodolfo\Desktop\AnalisisSimuLAN\" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");            
+            _log_info_optimizacion.ObtenerIteracionOptima(CriterioOptimizacion.MinutosAtraso, _std_objetivo);            
         }
+
         public void OptimizarReaccionarios(CambiarVistaSimularEventHandler cambiarVista, EnviarMensajeEventHandler enviarMensaje, ActualizarPorcentajeEventHandler actualizarPorcentaje, ref bool optimizacionCancelada, int total_iteraciones)
         {
             //Optimizacion inicial
@@ -137,14 +138,30 @@ namespace SimuLAN.Clases.Optimizacion
                 iteraciones++;
                 _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Optimizacion, variaciones_1);
                 _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Optimizacion, impuntualidades_sim_1);           
+
             }
-            //Agregar los tramos previos (siempre que no estén en la lista): estos son los que generan el atraso reaccionario, y deben anticiparse
+            _log_info_optimizacion.ObtenerIteracionOptima(CriterioOptimizacion.MinutosAtraso, _std_objetivo);
+        }
 
-            //Dividir la lista en una lista para cada avión, y reordenar cronológicamente
+        public void ImprimirReportes(string path)
+        {
+            if (_log_info_optimizacion != null)
+            {
+                _log_info_optimizacion.ImprimirDetalles(path + @"\Optimizacion\Detalles" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
+                _log_info_optimizacion.ImprimirResumenIteraciones(path + @"\Optimizacion\Iteraciones" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds);
+                _log_info_optimizacion.ImprimirOptimo(path + @"\Optimizacion\Optimo" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds);            
+            }
+           
+        }
 
-            //Con LTFM, iterar:
-            //Llevar al máximo las variaciones desde el primer tramo al último de cada avión, de manera que se minimice el atraso reaccionario. Los sin reaccionario, se adelantan, y los con reaccionario, se retrasan.
-            //ExportarHistorialPuntualidades(@"C:\Users\Rodolfo\Desktop\AnalisisSimuLAN\" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
+        private List<int> GetDominio()
+        {
+            List<int> variaciones = new List<int>();
+            for (int i = -_variacion_permitida; i <= _variacion_permitida; i = i + 5)
+            {
+                variaciones.Add(i);
+            }
+            return variaciones;
         }
     
         //internal void ExportarHistorialPuntualidades(string dir)

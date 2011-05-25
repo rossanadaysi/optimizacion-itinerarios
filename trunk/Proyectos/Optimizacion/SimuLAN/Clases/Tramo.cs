@@ -222,11 +222,11 @@ namespace SimuLAN.Clases
         {
             get
             {
-                if (_conexiones_pairing_posteriores == null)
+                if (_conexiones_pax_posteriores == null)
                 {
-                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
+                    this._conexiones_pax_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
                 }
-                return _conexiones_pairing_posteriores;
+                return _conexiones_pax_posteriores;
             }
         }
 
@@ -234,22 +234,45 @@ namespace SimuLAN.Clases
         {
             get
             {
-                if (_conexiones_pairing_posteriores == null)
+                if (_conexiones_pairing_anteriores == null)
                 {
-                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
+                    this._conexiones_pairing_anteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
                 }
-                return _conexiones_pairing_posteriores;
+                return _conexiones_pairing_anteriores;
+            }
+        }
+
+        public SerializableList<ConexionLegs> TodasLasConexionesPosteriores
+        {
+            get
+            {
+                SerializableList<ConexionLegs> conexiones = new SerializableList<ConexionLegs>();
+                conexiones.AddAll(ConexionesPairingPosteriores);
+                conexiones.AddAll(ConexionesPaxPosteriores);
+                return conexiones;
+            }
+        }
+
+
+        public SerializableList<ConexionLegs> TodasLasConexionesAnteriores
+        {
+            get
+            {
+                SerializableList<ConexionLegs> conexiones = new SerializableList<ConexionLegs>();
+                conexiones.AddAll(ConexionesPairingAnteriores);
+                conexiones.AddAll(ConexionesPaxAnteriores);
+                return conexiones;
             }
         }
         public SerializableList<ConexionLegs> ConexionesPaxAnteriores
         {
             get
             {
-                if (_conexiones_pairing_posteriores == null)
+                if (_conexiones_pax_anteriores == null)
                 {
-                    this._conexiones_pairing_posteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
+                    this._conexiones_pax_anteriores = this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
                 }
-                return _conexiones_pairing_posteriores;
+                return _conexiones_pax_anteriores;
             }
         }
         /// <summary>
@@ -505,19 +528,10 @@ namespace SimuLAN.Clases
             get
             {
                 List<Tramo> tramos = new List<Tramo>();
-                SerializableList<ConexionLegs> conexiones_pairing_posteriores = this.ConexionesPairingAnteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, false);
-                SerializableList<ConexionLegs> conexiones_pax_posteriores = this.ConexionesPaxAnteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, false);
-                if (conexiones_pairing_posteriores != null && conexiones_pairing_posteriores.Count > 0)
+                SerializableList<ConexionLegs> conexiones_posteriores = this.TodasLasConexionesPosteriores;                
+                if (conexiones_posteriores != null && conexiones_posteriores.Count > 0)
                 {
-                    foreach (ConexionLegs c in conexiones_pairing_posteriores)
-                    {
-                        Tramo tramo = c.GetTramo(c.NumTramoFin);
-                        tramos.Add(tramo);
-                    }
-                }
-                if (conexiones_pax_posteriores != null && conexiones_pax_posteriores.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pax_posteriores)
+                    foreach (ConexionLegs c in conexiones_posteriores)
                     {
                         Tramo tramo = c.GetTramo(c.NumTramoFin);
                         tramos.Add(tramo);
@@ -532,19 +546,11 @@ namespace SimuLAN.Clases
             get
             {
                 List<Tramo> tramos = new List<Tramo>();
-                SerializableList<ConexionLegs> conexiones_pairing_anteriores = this.ConexionesPairingPosteriores;// this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pairing, true);
-                SerializableList<ConexionLegs> conexiones_pax_anteriores = this.ConexionesPaxPosteriores; // this.GetConexion(Convert.ToInt32(this.TramoBase.Numero_Global), TipoConexion.Pasajeros, true);
-                if (conexiones_pairing_anteriores != null && conexiones_pairing_anteriores.Count > 0)
+                SerializableList<ConexionLegs> conexiones_anteriores = this.TodasLasConexionesAnteriores;
+                
+                if (conexiones_anteriores != null && conexiones_anteriores.Count > 0)
                 {
-                    foreach (ConexionLegs c in conexiones_pairing_anteriores)
-                    {
-                        Tramo tramo = c.GetTramo(c.NumTramoIni);
-                        tramos.Add(tramo);
-                    }
-                }
-                if (conexiones_pax_anteriores != null && conexiones_pax_anteriores.Count > 0)
-                {
-                    foreach (ConexionLegs c in conexiones_pax_anteriores)
+                    foreach (ConexionLegs c in conexiones_anteriores)
                     {
                         Tramo tramo = c.GetTramo(c.NumTramoIni);
                         tramos.Add(tramo);
@@ -575,7 +581,10 @@ namespace SimuLAN.Clases
                         _holguras_delante_para_cada_conexion.Add(this.Tramo_Siguiente.TramoBase.Numero_Global, this.Tramo_Siguiente.TInicialProg - tiempo_fin_corregido);
                         foreach (Tramo t in this.TramosConectadosDelante)
                         {
-                            _holguras_delante_para_cada_conexion.Add(t.TramoBase.Numero_Global, t.TInicialProg - tiempo_fin_corregido);
+                            if (!_holguras_delante_para_cada_conexion.ContainsKey(t.TramoBase.Numero_Global))
+                            {
+                                _holguras_delante_para_cada_conexion.Add(t.TramoBase.Numero_Global, t.TInicialProg - tiempo_fin_corregido);
+                            }
                         }
                     }
                 }
@@ -605,7 +614,10 @@ namespace SimuLAN.Clases
                         _holguras_atras_para_cada_conexion.Add(this.Tramo_Previo.TramoBase.Numero_Global, tiempo_fin_corregido - this.Tramo_Previo.TFinalProg);
                         foreach (Tramo t in this.TramosConectadosAtras)
                         {
-                            _holguras_atras_para_cada_conexion.Add(t.TramoBase.Numero_Global, tiempo_fin_corregido - t.TFinalProg);
+                            if (!_holguras_atras_para_cada_conexion.ContainsKey(t.TramoBase.Numero_Global))
+                            {
+                                _holguras_atras_para_cada_conexion.Add(t.TramoBase.Numero_Global, tiempo_fin_corregido - t.TFinalProg);
+                            }
                         }
                     }
                 }

@@ -31,6 +31,46 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
+        public int Simulaciones
+        {
+            get
+            {
+                int simulaciones = 0;
+                foreach (FaseOptimizacion fase in _historial_impuntualidades.Keys)
+                {
+                    simulaciones += _historial_impuntualidades[fase].Count;
+                }
+                return simulaciones;
+            }
+        }
+
+        public int Optimizaciones
+        {
+            get
+            {
+                int optimizaciones = 0;
+                if (_historial_impuntualidades != null && _historial_impuntualidades.ContainsKey(FaseOptimizacion.Optimizacion))
+                {
+                    optimizaciones = _historial_impuntualidades[FaseOptimizacion.Optimizacion].Count;
+                }
+                return optimizaciones;
+            }
+        }
+
+        public int Ajustes
+        {
+            get
+            {
+                int ajustes = 0;
+                if (_historial_impuntualidades != null && _historial_impuntualidades.ContainsKey(FaseOptimizacion.Ajuste))
+                {
+                    ajustes = _historial_impuntualidades[FaseOptimizacion.Ajuste].Count;
+                }
+                return ajustes;
+            }
+        }
+
+
         public ResumenIteracion IteracionOptima
         {
             get
@@ -201,7 +241,7 @@ namespace SimuLAN.Clases.Optimizacion
             fs.Close();
         }
 
-        internal void ImprimirOptimo(string path,List<int> dominio, List<int> stds)
+        internal void ImprimirOptimo(string path,List<int> dominio, List<int> stds, Itinerario itinerario, double minutos_simulacion, double minutos_optimizacion)
         {
             FileStream fs = new FileStream(path, FileMode.Create);
             StreamWriter sw = new StreamWriter(fs);
@@ -209,6 +249,15 @@ namespace SimuLAN.Clases.Optimizacion
             sb.Append("\tCampo");
             sb.Append("Valor");            
             sw.WriteLine(sb.ToString());
+            sw.WriteLine("Tramos\t" + itinerario.Tramos.Count.ToString());
+            sw.WriteLine("Aviones\t" + itinerario.AvionesDictionary.Count.ToString());
+            sw.WriteLine("Dias\t" + itinerario.FechaTermino.Subtract(itinerario.FechaInicio).TotalDays.ToString());
+            sw.WriteLine("Minutos simulacion\t" + minutos_simulacion.ToString());
+            sw.WriteLine("Minutos optimizacion\t" + minutos_optimizacion.ToString());
+            sw.WriteLine("Tiempo total\t" + (minutos_optimizacion + minutos_simulacion).ToString());
+            sw.WriteLine("Simulaciones\t" + Simulaciones.ToString());
+            sw.WriteLine("Optimizaciones\t" + Optimizaciones.ToString());
+            sw.WriteLine("Ajustes\t" + Ajustes.ToString());
             sw.WriteLine(IteracionOptima.ImprimirResumenVertical(dominio, stds));
             sw.WriteLine(MejorasDeOptimo.EscribirResumenVertical(stds));            
             sw.Close();

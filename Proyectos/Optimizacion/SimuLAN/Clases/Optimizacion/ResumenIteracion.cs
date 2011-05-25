@@ -168,8 +168,6 @@ namespace SimuLAN.Clases.Optimizacion
             {
                 throw new Exception("Error al construir resumen iteracion");                
             };
-            return null;
-
         }
 
         public ResumenIteracion(FaseOptimizacion fase, int numero_iteracion, Dictionary<int, ExplicacionImpuntualidad> impuntualidades, Dictionary<int, int> variaciones)

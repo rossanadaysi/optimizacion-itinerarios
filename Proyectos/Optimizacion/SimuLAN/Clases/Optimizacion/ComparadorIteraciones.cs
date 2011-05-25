@@ -85,9 +85,9 @@ namespace SimuLAN.Clases.Optimizacion
             StringBuilder sb = new StringBuilder();
             string tab = "\t";
             
-            sb.AppendLine("Atraso total" + tab + DiferenciaAtrasoTotal.ToString());
-            sb.AppendLine("Atraso reaccionario" + tab + DiferenciaReaccionarioTotal.ToString());
-            sb.AppendLine("Atraso no reaccionario" + tab + DiferenciaNoReaccioarioTotal.ToString());
+            sb.AppendLine("Ganancia minutos atraso total" + tab + DiferenciaAtrasoTotal.ToString());
+            sb.AppendLine("Ganancia minutos atraso reaccionario" + tab + DiferenciaReaccionarioTotal.ToString());
+            sb.AppendLine("Diferencia minutos atraso no reaccionario" + tab + DiferenciaNoReaccioarioTotal.ToString());
             foreach (int std in stds)
             {
                 sb.AppendLine("Diferencia Impuntualidad total STD" + std + tab + DiferenciaImpuntualidadTotal[std].ToString());

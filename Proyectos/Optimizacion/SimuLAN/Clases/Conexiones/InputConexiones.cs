@@ -238,16 +238,23 @@ namespace SimuLAN.Clases
             int contadorConexiones = 1;
             foreach (DataRow row in data.Rows)
             {
+                List<string> vuelos_agregados = new List<string>();
                 if (data.Rows.IndexOf(row) >= 1 && row[0].ToString().ToCharArray().Length > 0)
                 {
                     object[] valores = row.ItemArray;
                     string vuelo_1 = valores[0].ToString();
                     string vuelo_2 = valores[1].ToString();
+                    string key_conexion = vuelo_1 + "-" + vuelo_2;
+                    
                     double prom_pax = Convert.ToDouble(valores[2].ToString().Replace('.', ','));
                     double desv_pax = Convert.ToDouble(valores[3].ToString().Replace('.',','));
-                    ConexionPasajeros conexion_pax = new ConexionPasajeros(vuelo_1, vuelo_2, TipoConexion.Pasajeros, prom_pax, desv_pax);
-                    _pax_conex.Add(contadorConexiones, conexion_pax);                    
-                    contadorConexiones++;
+                    if (!vuelos_agregados.Contains(key_conexion))
+                    {
+                        ConexionPasajeros conexion_pax = new ConexionPasajeros(vuelo_1, vuelo_2, TipoConexion.Pasajeros, prom_pax, desv_pax);
+                        _pax_conex.Add(contadorConexiones, conexion_pax);
+                        vuelos_agregados.Add(key_conexion);
+                        contadorConexiones++;
+                    }
                 }
             }
         }

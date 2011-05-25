@@ -449,6 +449,7 @@ namespace InterfazSimuLAN
         private void EnviarMsj(string mensaje)
         {
             label_msg.Text = mensaje;
+            label_msg.Refresh();
         }
 
         /// <summary>

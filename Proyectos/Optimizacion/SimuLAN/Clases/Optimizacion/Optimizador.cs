@@ -25,11 +25,32 @@ namespace SimuLAN.Clases.Optimizacion
 
         private int _salto_variaciones;
 
+        private DateTime _marcador;
+
+        private TimeSpan _tiempo_simulacion;
+
+        private TimeSpan _tiempo_optimizacion;
+
         public Itinerario ItinerarioBase { get; set; }
 
         public ParametrosSimuLAN Parametros { get; set; }
 
-        public ModeloDisrupciones Disrupciones { get; set; }        
+        public ModeloDisrupciones Disrupciones { get; set; }
+
+        public double MinutosOptimizacion
+        {
+            get{
+                return _tiempo_optimizacion.TotalMinutes;
+            }
+        }
+
+        public double MinutosSimulacion
+        {
+            get
+            {
+                return _tiempo_simulacion.TotalMinutes;
+            }
+        }
 
         public Optimizador(Itinerario itinerario_base,ParametrosSimuLAN parametros, ModeloDisrupciones disrupciones, List<int> stds,int std_objetivo, DateTime fechaIni, DateTime fechaFin, int variacion_permitida)
         {
@@ -44,6 +65,9 @@ namespace SimuLAN.Clases.Optimizacion
             this._salto_variaciones = 5;
             this._log_info_optimizacion = new LogOptimizacion();
             this._std_objetivo = std_objetivo;
+            this._marcador = DateTime.Now;
+            this._tiempo_simulacion = TimeSpan.Zero;
+            this._tiempo_optimizacion = TimeSpan.Zero;
         }
         //Para cada tramo estimar sus posibilidades de variación y asignarle un radio más y radio menos.
         //Deberá retornar un objeto Resultado con un itinerario propuesto y una estimación de sus beneficios en comparación al itinerario base.
@@ -69,22 +93,27 @@ namespace SimuLAN.Clases.Optimizacion
             this._tramos_optimizacion.CargarImpuntualidadesBase(impuntualidades_base);            
             int iteraciones = 1;
             this._log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Inicio, impuntualidades_base);
-
+            _tiempo_simulacion = _tiempo_simulacion.Add(DateTime.Now - _marcador);
+            _marcador = DateTime.Now;
             while (iteraciones < total_iteraciones)
             {
-                int variaciones;
-                this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado(out variaciones,_salto_variaciones);
+                enviarMensaje("Optimización número: " + iteraciones);
+                this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado(_salto_variaciones);
+                _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
                 //Aplica variaciones en itinerario (siempre que no viole restricciones)
-                manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
-                enviarMensaje("Optimización número: " + iteraciones + ", variaciones: " + variaciones);
+                manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);                
                 List<Simulacion> replicas_sim_1 = manager.SimularNormal();
+                _tiempo_simulacion = _tiempo_simulacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
                 Dictionary<int, ExplicacionImpuntualidad> impuntualidades_sim_1 = _tramos_optimizacion.EstimarImpuntualidades(replicas_sim_1, _fecha_ini, _fecha_fin, _stds);
                 Dictionary<int, int> variaciones_1 = _tramos_optimizacion.ObtenerVariacionesPropuestas();
                 this._tramos_optimizacion.CargarImpuntualidadesIteraciones(impuntualidades_sim_1);
                 iteraciones++;
                 _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Optimizacion, impuntualidades_sim_1);
                 _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Optimizacion, variaciones_1);
-
+                _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
                 //if (iteraciones <= total_iteraciones / 1.25)
                 //{
                 //    this._tramos_optimizacion.DeshacerCambiosQueEmpeoranPuntualidad(out cambios, this._historial_puntualidades_optimizacion,_historial_variaciones_optimizacion[iteraciones-1], true);
@@ -102,11 +131,14 @@ namespace SimuLAN.Clases.Optimizacion
                     this._tramos_optimizacion.VolverAEstadoDeMenorAtrasoPropagado(_log_info_optimizacion);
                     manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
                     List<Simulacion> replicas_sim_2 = manager.SimularNormal();
+                    _tiempo_simulacion = _tiempo_simulacion.Add(DateTime.Now - _marcador);
+                    _marcador = DateTime.Now;
                     Dictionary<int, ExplicacionImpuntualidad> impuntualidades_sim_2 = _tramos_optimizacion.EstimarImpuntualidades(replicas_sim_2, _fecha_ini, _fecha_fin, _stds);
                     Dictionary<int, int> variaciones_2 = _tramos_optimizacion.ObtenerVariacionesPropuestas();
                     _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Ajuste, variaciones_2);
-                    _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Ajuste, impuntualidades_sim_2);                
-
+                    _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Ajuste, impuntualidades_sim_2);
+                    _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
+                    _marcador = DateTime.Now;
                 }
                 
             }
@@ -116,9 +148,12 @@ namespace SimuLAN.Clases.Optimizacion
         public void OptimizarReaccionarios(CambiarVistaSimularEventHandler cambiarVista, EnviarMensajeEventHandler enviarMensaje, ActualizarPorcentajeEventHandler actualizarPorcentaje, ref bool optimizacionCancelada, int total_iteraciones)
         {
             //Optimizacion inicial
+
             enviarMensaje("Generando simulación base");
             ManagerSimulacion manager = new ManagerSimulacion(ItinerarioBase, Parametros, Disrupciones, _stds, _fecha_ini, _fecha_fin, enviarMensaje, actualizarPorcentaje, ref optimizacionCancelada);
             List<Simulacion> replicasBase = manager.SimularNormal();
+            _tiempo_simulacion = _tiempo_simulacion.Add(DateTime.Now - _marcador);
+            _marcador = DateTime.Now;
             Dictionary<int, ExplicacionImpuntualidad> impuntualidades_base = _tramos_optimizacion.EstimarImpuntualidades(replicasBase, _fecha_ini, _fecha_fin, _stds);
             this._tramos_optimizacion.CargarImpuntualidadesBase(impuntualidades_base);
             int iteraciones = 1;
@@ -126,19 +161,23 @@ namespace SimuLAN.Clases.Optimizacion
 
             while (iteraciones < total_iteraciones)
             {
-                int variaciones;
-                this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado(out variaciones, _salto_variaciones);
+                this._tramos_optimizacion.OptimizarCurvasAtrasoPropagado( _salto_variaciones);
                 //Aplica variaciones en itinerario (siempre que no viole restricciones)
                 manager.ItinerarioBase = _tramos_optimizacion.GenerarNuevoItinerarioConCambios(Parametros.Escalares.Semilla);
-                enviarMensaje("Optimización número: " + iteraciones + ", variaciones: " + variaciones);
+                enviarMensaje("Optimización número: " + iteraciones);
+                _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
                 List<Simulacion> replicas_sim_1 = manager.SimularNormal();
+                _tiempo_simulacion = _tiempo_simulacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
                 Dictionary<int, ExplicacionImpuntualidad> impuntualidades_sim_1 = _tramos_optimizacion.EstimarImpuntualidades(replicas_sim_1, _fecha_ini, _fecha_fin, _stds);
                 Dictionary<int, int> variaciones_1 = _tramos_optimizacion.ObtenerVariacionesPropuestas();
                 this._tramos_optimizacion.CargarImpuntualidadesIteraciones(impuntualidades_sim_1);
                 iteraciones++;
                 _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Optimizacion, variaciones_1);
-                _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Optimizacion, impuntualidades_sim_1);           
-
+                _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Optimizacion, impuntualidades_sim_1);
+                _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
+                _marcador = DateTime.Now;
             }
             _log_info_optimizacion.ObtenerIteracionOptima(CriterioOptimizacion.MinutosAtraso, _std_objetivo);
         }
@@ -149,7 +188,7 @@ namespace SimuLAN.Clases.Optimizacion
             {
                 _log_info_optimizacion.ImprimirDetalles(path + @"\Optimizacion\Detalles" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
                 _log_info_optimizacion.ImprimirResumenIteraciones(path + @"\Optimizacion\Iteraciones" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds);
-                _log_info_optimizacion.ImprimirOptimo(path + @"\Optimizacion\Optimo" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds);            
+                _log_info_optimizacion.ImprimirOptimo(path + @"\Optimizacion\Optimo" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds, this.ItinerarioBase, MinutosSimulacion, MinutosOptimizacion);            
             }
            
         }
@@ -163,98 +202,6 @@ namespace SimuLAN.Clases.Optimizacion
             }
             return variaciones;
         }
-    
-        //internal void ExportarHistorialPuntualidades(string dir)
-        //{
-        //    FileStream fs = new FileStream(dir, FileMode.Create);
-        //    StreamWriter sw = new StreamWriter(fs);
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.Append("iteracion");
-        //    sb.Append("\tfase");
-        //    sb.Append("\tid_tramo");            
-        //    sb.Append("\tImpuntualidadTotal");
-        //    sb.Append("\tImpuntualidadReaccionarios");
-        //    sb.Append("\tImpuntualidadSinReaccionarios");
-        //    sb.Append("\tVariacion");
-        //    sw.WriteLine(sb.ToString());
-        //    foreach (int iteracion in this._historial_puntualidades_optimizacion.Keys)
-        //    {
-        //        foreach (int tramo in this._historial_puntualidades_optimizacion[iteracion].Keys)
-        //        {
-        //            sb = new StringBuilder();
-        //            sb.Append(iteracion);
-        //            sb.Append("\tOptimizacion");
-        //            sb.Append("\t" + tramo);
-        //            sb.Append("\t" + this._historial_puntualidades_optimizacion[iteracion][tramo].InfoParaReporte());
-        //            if (this._historial_variaciones_optimizacion.ContainsKey(iteracion))
-        //            {
-        //                sb.Append("\t" + this._historial_variaciones_optimizacion[iteracion][tramo]);
-        //            }
-        //            else
-        //            {
-        //                sb.Append("\t0");
-        //            }
-        //            sw.WriteLine(sb.ToString());                    
-        //        }
-        //    }
-        //    sw.Close();
-        //    fs.Close();
-        //}
-
-        //internal void ExportarHistorialPuntualidades2(string dir)
-        //{
-        //    FileStream fs = new FileStream(dir, FileMode.Create);
-        //    StreamWriter sw = new StreamWriter(fs);
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.Append("iteracion");
-        //    sb.Append("\tfase");
-        //    sb.Append("\tid_tramo");
-        //    //sb.Append("\tid_avion");
-        //    sb.Append("\tImpuntualidadTotal");
-        //    sb.Append("\tImpuntualidadReaccionarios");
-        //    sb.Append("\tImpuntualidadSinReaccionarios");
-        //    sb.Append("\tVariacion");
-        //    sw.WriteLine(sb.ToString());
-        //    foreach (int iteracion in this._historial_puntualidades_optimizacion.Keys)
-        //    {
-        //        foreach (int tramo in this._historial_puntualidades_optimizacion[iteracion].Keys)
-        //        {
-        //            sb = new StringBuilder();
-        //            sb.Append(iteracion);
-        //            sb.Append("\tOptimizacion");
-        //            sb.Append("\t" + tramo);
-        //            sb.Append("\t" + this._historial_puntualidades_optimizacion[iteracion][tramo].InfoParaReporte());
-        //            if (this._historial_variaciones_optimizacion.ContainsKey(iteracion))
-        //            {
-        //                sb.Append("\t" + this._historial_variaciones_optimizacion[iteracion][tramo]);
-        //            }
-        //            else
-        //            {
-        //                sb.Append("\t0");
-        //            }
-        //            sw.WriteLine(sb.ToString());
-        //            if (this._historial_puntualidades_regresion.ContainsKey(iteracion))
-        //            {
-        //                sb = new StringBuilder();
-        //                sb.Append(iteracion);
-        //                sb.Append("\tRegresion");
-        //                sb.Append("\t" + tramo);
-        //                sb.Append("\t" + this._historial_puntualidades_regresion[iteracion][tramo].InfoParaReporte());
-        //                if (this._historial_variaciones_regresion.ContainsKey(iteracion))
-        //                {
-        //                    sb.Append("\t" + this._historial_variaciones_regresion[iteracion][tramo]);
-        //                }
-        //                else
-        //                {
-        //                    sb.Append("\t0");
-        //                }
-        //                sw.WriteLine(sb.ToString());
-        //            }
-        //        }
-        //    }
-        //    sw.Close();
-        //    fs.Close();
-        //}
     
     }
 

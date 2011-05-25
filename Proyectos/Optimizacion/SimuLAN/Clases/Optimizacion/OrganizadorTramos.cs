@@ -4,25 +4,69 @@ using SimuLAN.Utils;
 
 namespace SimuLAN.Clases.Optimizacion
 {
+    public delegate List<InfoTramoParaOptimizacion> BuscarTramosConectadosEventHandler(SerializableList<ConexionLegs> conexiones_posteriores, bool busca_conexiones_posteriores);
+
     public class OrganizadorTramos
     {
         private Dictionary<int, InfoTramoParaOptimizacion> _tramos;
         private Dictionary<string, List<InfoTramoParaOptimizacion>> _tramos_por_avion;
         private int _variacion_permitida;
+        private BuscarTramosConectadosEventHandler _buscar_tramos;
+
         public Dictionary<string, List<InfoTramoParaOptimizacion>> TramosPorAvion
         {
             get { return _tramos_por_avion; }
         }
 
         public Itinerario ItinerarioBase { get; set; }
-
+        
         public OrganizadorTramos(Itinerario itinerarioBase, int variacion_permitida)
         {
             this.ItinerarioBase = itinerarioBase;
             this._variacion_permitida = variacion_permitida;
             _tramos = new Dictionary<int, InfoTramoParaOptimizacion>();
             _tramos_por_avion = new Dictionary<string, List<InfoTramoParaOptimizacion>>();
+            this._buscar_tramos = new BuscarTramosConectadosEventHandler(BuscarTramos);
             CargarTramos();
+        }
+
+        public List<InfoTramoParaOptimizacion> BuscarTramos(SerializableList<ConexionLegs> conexiones, bool busca_conexiones_posteriores)
+        {
+            List<InfoTramoParaOptimizacion> tramos_encontrados = new List<InfoTramoParaOptimizacion>();
+            if (conexiones != null && conexiones.Count > 0)
+            {
+                foreach (ConexionLegs conexion in conexiones)
+                {
+                    int numero_conexion = 0;
+                    if (busca_conexiones_posteriores)
+                    {
+                        numero_conexion = conexion.NumTramoFin;
+                    }
+                    else
+                    {
+                        numero_conexion = conexion.NumTramoIni;
+                    }
+                    Tramo tramo_siguiente = conexion.GetTramo(numero_conexion);
+                    bool tramo_encontrado = false;
+                    foreach (List<InfoTramoParaOptimizacion> info_tramos in _tramos_por_avion.Values)
+                    {
+                        foreach (InfoTramoParaOptimizacion info_tramo in info_tramos)
+                        {
+                            if (tramo_siguiente.TramoBase.Numero_Global == info_tramo.TramoOriginal.TramoBase.Numero_Global)
+                            {
+                                tramos_encontrados.Add(info_tramo);
+                                tramo_encontrado = true;
+                                continue;
+                            }
+                        }
+                        if (tramo_encontrado)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+            return tramos_encontrados;
         }
 
         private void CargarTramos()
@@ -34,7 +78,7 @@ namespace SimuLAN.Clases.Optimizacion
                 InfoTramoParaOptimizacion tramo_previo = null ;
                 while (aux != null)
                 {
-                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(aux, tramo_previo, _variacion_permitida);
+                    InfoTramoParaOptimizacion tramo_new = new InfoTramoParaOptimizacion(aux, tramo_previo, _variacion_permitida, _buscar_tramos);
                     tramo_previo = tramo_new;
                     _tramos.Add(tramo_new.IdTramo, tramo_new);
                     _tramos_por_avion[a.IdAvion].Add(tramo_new);
@@ -170,22 +214,6 @@ namespace SimuLAN.Clases.Optimizacion
             return impuntualidades_tramo;
         }
 
-        internal void OrdernarTramoSegunReaccionarios()
-        {
-            foreach (string avion in _tramos_por_avion.Keys)
-            {
-                _tramos_por_avion[avion].Sort(new Comparison<InfoTramoParaOptimizacion>(CompararTramosSegunReaccionario));
-            }
-        }
-
-        internal void OrdernarTramoSegunPosicion()
-        {
-            foreach (string avion in _tramos_por_avion.Keys)
-            {
-                _tramos_por_avion[avion].Sort(new Comparison<InfoTramoParaOptimizacion>(CompararTramosSegunPosicion));
-            }
-        }
-
         internal int CompararTramosSegunReaccionario(InfoTramoParaOptimizacion t1, InfoTramoParaOptimizacion t2)
         {
             if (t1.ComparadorPrioridadOptimizacion > t2.ComparadorPrioridadOptimizacion)
@@ -244,53 +272,6 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        //internal void OptimizarVariacionesReaccionarios(out int variaciones, out int cambios_deshechos, out int tramos_cerrados)
-        //{
-        //    //Ordena tramo en avión según atraso reaccionario
-        //    int salto_variaciones = 10;
-        //    double porcentaje_tolerancia = 0.1;
-        //    variaciones = 0;
-        //    cambios_deshechos = 0;
-        //    tramos_cerrados = 0;
-        //    this.OrdernarTramoSegunReaccionarios();
-        //    foreach (string avion in this.TramosPorAvion.Keys)
-        //    {
-
-        //        foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
-        //        {
-        //            if (infoTramo.Optimizable)
-        //            {
-        //                bool convieneOptimizar = infoTramo.ConvieneOptimizar();
-        //                bool aplicaExitoso = false;
-        //                if (convieneOptimizar)
-        //                {
-        //                    //Genera variaciones en tramos
-        //                    if (infoTramo.ExplicacionImpuntualidadActual.RazonImpuntualidadReaccionarios < 0.5)
-        //                    {
-        //                        aplicaExitoso = infoTramo.IncrementarVariacionMenosAplicada(salto_variaciones);                               
-        //                    }
-        //                    else if(infoTramo.ExplicacionImpuntualidadActual.RazonImpuntualidadReaccionarios >1 - porcentaje_tolerancia && infoTramo.ExplicacionImpuntualidadActual.AtrasoReaccionarios>20)
-        //                    {
-        //                        aplicaExitoso = infoTramo.IncrementarVariacionMasAplicada(salto_variaciones);                                
-        //                    }
-        //                    if (aplicaExitoso)
-        //                    {
-        //                        variaciones++;
-        //                    }
-        //                }
-        //                else if(!aplicaExitoso)
-        //                {
-        //                    cambios_deshechos++;
-        //                    tramos_cerrados++;
-        //                    infoTramo.IncrementarVariacionMasAplicada(-salto_variaciones);
-        //                    infoTramo.IncrementarVariacionMenosAplicada(-salto_variaciones);
-        //                    infoTramo.TramoAbierto = false;
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
-
         public int ObtenerMinimaVariacionDelanteTramo(InfoTramoParaOptimizacion info_tramo)
         {
             if (info_tramo.TramoSiguiente != null)
@@ -336,14 +317,12 @@ namespace SimuLAN.Clases.Optimizacion
                 return 0;
             }
         }
-
-        internal void OptimizarCurvasAtrasoPropagado(out int variaciones,int salto_variaciones)
+        private enum TipoPriorizacion { Lista, Atraso, Puntualidad, Random }
+        internal void OptimizarCurvasAtrasoPropagado(int salto_variaciones)
         {
             double ganancia_total = 0;
-            variaciones = 0;
-            //Ordenar tramo (si no se recorren de manera cronológica
-            this.OrdernarTramoSegunPosicion();
-            foreach (string avion in this.TramosPorAvion.Keys)
+            List<string> lista_priorizada_aviones = PriorizarListaAviones(TipoPriorizacion.Random);
+            foreach (string avion in lista_priorizada_aviones)
             {
                 Dictionary<int, bool> infoTramoOptimizado = new Dictionary<int, bool>();
                 int contador = 0;
@@ -378,8 +357,8 @@ namespace SimuLAN.Clases.Optimizacion
                                 Dictionary<double, double> curva_atrasos_propagados_globales = new Dictionary<double, double>();
                                 for (int i = -rangoMenos; i <= rangoMas; i = i + salto_variaciones)
                                 {
-                                    double atraso_previo = infoTramo.AtrasoTramoPrevio; 
-                                    double atraso_propagado = infoTramo.EstimarAtrasoPropagadoAvion(atraso_previo, i);
+                                    double atraso_previo = infoTramo.AtrasoTramoPrevio;
+                                    double atraso_propagado = infoTramo.EstimarAtrasoArbolPropagacion(atraso_previo, i, 10);
                                     curva_atrasos_propagados_globales.Add(i, atraso_propagado);
                                 }
                                 Curva c = new Curva(curva_atrasos_propagados_globales, -rangoMenos, rangoMas, salto_variaciones);
@@ -414,14 +393,6 @@ namespace SimuLAN.Clases.Optimizacion
                         int variacion_aplicada_final = Convert.ToInt32(infoTramoVariacionPropuesta[index_optimo]);
                         this.TramosPorAvion[avion][index_optimo].VariacionAplicada = variacion_aplicada_final;
                         ganancia_total += ganancia_maxima;
-                        if (variacion_aplicada_final != 0)
-                        {
-                            variaciones++;
-                        }
-                        else
-                        {
-
-                        }
                         infoTramoOptimizado[index_optimo] = true;
                         cantidad_tramos_optimizados = 0;
                         foreach (int i in infoTramoOptimizado.Keys)
@@ -443,6 +414,96 @@ namespace SimuLAN.Clases.Optimizacion
 
         }
 
+        private List<string> PriorizarListaAviones(TipoPriorizacion tipoPriorizacion)
+        {
+            List<string> lista_aviones = new List<string>();
+            List<string> lista_aviones_priorizada = new List<string>();
+            foreach (string avion in _tramos_por_avion.Keys)
+            {
+                lista_aviones.Add(avion);
+            }
+            if (tipoPriorizacion == TipoPriorizacion.Lista)
+            {
+                foreach (string avion in lista_aviones)
+                {
+                    lista_aviones_priorizada.Add(avion);
+                }
+            }
+            else if (tipoPriorizacion == TipoPriorizacion.Random)
+            {
+                Random r = new Random(DateTime.Now.Millisecond);
+                List<int> indices_agregados = new List<int>();
+               
+                int total_aviones = lista_aviones.Count;
+                while (lista_aviones.Count > indices_agregados.Count)
+                {
+                    int indice = r.Next(0, total_aviones);
+                    if (!indices_agregados.Contains(indice))
+                    {
+                        indices_agregados.Add(indice);
+                    }
+                }
+                foreach (int indice_random in indices_agregados)
+                {
+                    lista_aviones_priorizada.Add(lista_aviones[indice_random]);
+                }
+            }
+            else if (tipoPriorizacion == TipoPriorizacion.Atraso)
+            {
+                List<KeyValuePair<string,double>> atraso_por_avion = new List<KeyValuePair<string,double>>();
+                foreach (string avion in lista_aviones)
+                {
+                    double atraso = 0;
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[avion])
+                    {
+                        atraso += tramo.ExplicacionImpuntualidadActual.AtrasoTotal;
+                    }
+                    atraso_por_avion.Add(new KeyValuePair<string, double>(avion, atraso));
+                }
+                atraso_por_avion.Sort(new Comparison<KeyValuePair<string, double>>(CompararAtrasoEntreAviones));
+                foreach (KeyValuePair<string, double> kv in atraso_por_avion)
+                {
+                    lista_aviones_priorizada.Add(kv.Key);
+                }
+            }
+            else if (tipoPriorizacion == TipoPriorizacion.Puntualidad)
+            {
+                List<KeyValuePair<string, double>> impuntualidad_por_avion = new List<KeyValuePair<string, double>>();
+                foreach (string avion in lista_aviones)
+                {
+                    double impuntualidad = 0;
+                    int tramos_avion = _tramos_por_avion[avion].Count;
+                    foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[avion])
+                    {
+                        impuntualidad += tramo.ExplicacionImpuntualidadActual.ImpuntualidadTotal[0];
+                    }
+                    if(tramos_avion>0)
+                    {
+                        impuntualidad /= tramos_avion;
+                    }
+                    impuntualidad_por_avion.Add(new KeyValuePair<string, double>(avion, impuntualidad));
+                }
+                impuntualidad_por_avion.Sort(new Comparison<KeyValuePair<string, double>>(CompararAtrasoEntreAviones));
+                foreach (KeyValuePair<string, double> kv in impuntualidad_por_avion)
+                {
+                    lista_aviones_priorizada.Add(kv.Key);
+                }
+            }
+            return lista_aviones_priorizada;
+        }
+        internal int CompararAtrasoEntreAviones(KeyValuePair<string, double> o1, KeyValuePair<string, double> o2)
+        {
+            if (o1.Value < o2.Value)
+            {
+                return 1;
+            }
+            else if (o1.Value > o2.Value)
+            {
+                return -1;
+            }
+            else return 0;
+
+        }
         internal void DeshacerCambiosQueEmpeoranPuntualidad(out int cambios, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial,Dictionary<int,int> variacion_penultima, bool revisaPrimero,int std)
         {
             //definir de manera flexible si hacer en análisis respecto a situación inicial o la inmediatamente anterior.
@@ -534,7 +595,6 @@ namespace SimuLAN.Clases.Optimizacion
                 }
             }
         }
-
 
         internal void VolverAEstadoDeMejorPuntualidad(Dictionary<int, Dictionary<int, int>> historial_variaciones_1, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_1, Dictionary<int, Dictionary<int, int>> historial_variaciones_2, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad_2,int std_objetivo)
         {
@@ -634,7 +694,6 @@ namespace SimuLAN.Clases.Optimizacion
                 }
             }
         }
-
 
         private int ObtenerIteracionDeMejorPuntualidad(Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>> historial_puntualidad, string id_avion, out double impuntualidad_minima,int std_objetivo)
         {

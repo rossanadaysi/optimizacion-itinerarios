@@ -50,16 +50,6 @@ namespace SimuLAN.Clases
         private DateTime _date_time_ini_prog;
 
         /// <summary>
-        /// Indica si el tramo actual debe esperar a un tramo de otro avión por conexiones de tripulantes
-        /// </summary>
-        private bool _espera_tramo_por_conexion_pairing;
-
-        /// <summary>
-        /// Indica si el tramo actual debe esperar a un tramo de otro avión por conexiones de pasajeros
-        /// </summary>
-        private bool _espera_tramo_por_conexion_pasajeros;
-
-        /// <summary>
         /// Estado del tramo: { NoIniciado, Iniciado, EnProceso, Finalizado}
         /// </summary>
         private EstadoTramo _estado;
@@ -120,10 +110,10 @@ namespace SimuLAN.Clases
         /// </summary>
         private string _id_vuelo_reporte;
 
-        /// <summary>
-        /// Indica si el tramo actual inicia una conexion de tripulantes
-        /// </summary>
-        private bool _inicia_conexion_pairing;
+        ///// <summary>
+        ///// Indica si el tramo actual inicia una conexion de tripulantes
+        ///// </summary>
+        //private bool _inicia_conexion_pairing;
 
         /// <summary>
         /// Referencia al slot de mantenimiento posterior, si es que tiene.
@@ -164,7 +154,10 @@ namespace SimuLAN.Clases
         /// Tiempo de despegue resultante
         /// </summary>
         private int _t_inicial_rst;
-
+        /// <summary>
+        /// Entre el tiempo de Turn Around Minimo correspondiente a la estación de origen del tramo.
+        /// </summary>
+        private int _turn_around_minimo;
         /// <summary>
         /// Tramo base leido desde archivo Excel del itinerario
         /// </summary>
@@ -298,8 +291,8 @@ namespace SimuLAN.Clases
         /// </summary>
         public bool EsperaTramoPorConexionPairing
         {
-            get { return _espera_tramo_por_conexion_pairing; }
-            set { _espera_tramo_por_conexion_pairing = value; }
+            get { return ConexionesPairingAnteriores != null && ConexionesPairingAnteriores.Count > 0; }
+           
         }
 
         /// <summary>
@@ -307,8 +300,8 @@ namespace SimuLAN.Clases
         /// </summary>
         public bool EsperaTramoPorConexionPasajeros
         {
-            get { return _espera_tramo_por_conexion_pasajeros; }
-            set { _espera_tramo_por_conexion_pasajeros = value; }
+            get { return ConexionesPaxAnteriores != null && ConexionesPaxAnteriores.Count > 0; }
+           
         }
 
         /// <summary>
@@ -475,8 +468,8 @@ namespace SimuLAN.Clases
         /// </summary>
         public bool IniciaConexionPairing
         {
-            get{return _inicia_conexion_pairing;}
-            set{_inicia_conexion_pairing = value;}
+            get { return ConexionesPairingPosteriores != null && ConexionesPairingPosteriores.Count > 0; }
+            //set{_inicia_conexion_pairing = value;}
         }
         
         /// <summary>
@@ -709,7 +702,7 @@ namespace SimuLAN.Clases
         {
             get
             {
-                return this.GetTurnAroundMinimo(this);                
+                return this.ObtenerTurnAround();           
             }
         }
 
@@ -719,7 +712,7 @@ namespace SimuLAN.Clases
             {
                 if (this.Tramo_Siguiente != null)
                 {
-                    int retorno = this.GetTurnAroundMinimo(this.Tramo_Siguiente);
+                    int retorno = this.Tramo_Siguiente.ObtenerTurnAround();
                     return retorno;
                 }
                 else
@@ -780,7 +773,7 @@ namespace SimuLAN.Clases
         {
             get
             {
-                return Math.Max(_t_inicial_prog, TFinRstTramoPrevio + GetTurnAroundMinimo(this));
+                return Math.Max(_t_inicial_prog, TFinRstTramoPrevio + TurnAroundMinimoOrigen);
             }
         }
 
@@ -816,7 +809,7 @@ namespace SimuLAN.Clases
                 }
                 else
                 {
-                    return Tramo_Previo.TInicialProg + this.GetTurnAroundMinimo(this);
+                    return Tramo_Previo.TFinalProg + TurnAroundMinimoOrigen;
                 }
             }    
         }
@@ -957,13 +950,11 @@ namespace SimuLAN.Clases
             this._id_avion_programado_actual = _id_avion_operado;
             this._par_OD = this.TramoBase.Origen.ToString() + "-" + this.TramoBase.Destino.ToString();
             this._id_hub = this.TramoBase.Ac_Owner.ToString() + this.TramoBase.Numero_Vuelo.ToString() + this.TramoBase.Origen + this.TramoBase.Destino;
-            this._id_vuelo_reporte = this._par_OD + this._tramo_base.Numero_Vuelo.ToString();
-            this._espera_tramo_por_conexion_pairing = false;
-            this._espera_tramo_por_conexion_pasajeros = false;
-            this._inicia_conexion_pairing = false;
+            this._id_vuelo_reporte = this._par_OD + this._tramo_base.Numero_Vuelo.ToString();            
             this._negocio = NEGOCIO_DEFAULT;
             this._vuelo_hub = false;
             this._tramo_post_cadena_swap = false;
+            this._turn_around_minimo = 0;
         }
 
         #endregion
@@ -1021,11 +1012,11 @@ namespace SimuLAN.Clases
             SerializableList<ConexionLegs> conexiones;// this.GetConexion(this.TramoBase.Numero_Global, TipoConexion.Pairing, esSegundoTramo);
             if (esSegundoTramo)
             {
-                conexiones = this.ConexionesPairingPosteriores;
+                conexiones = this.ConexionesPairingAnteriores;
             }
             else
             {
-                conexiones = this.ConexionesPairingAnteriores;
+                conexiones = this.ConexionesPairingPosteriores;
             }
             if (conexiones.Count == 0)
             {
@@ -1061,7 +1052,7 @@ namespace SimuLAN.Clases
         /// <returns>Tiempo estimado de arrivo</returns>
         internal int TiempoInicialResultanteEstimado()
         {
-            Avion avion = this.GetAvion(this.IdAvionOperado);
+            Avion avion = this.GetAvion(this.IdAvionProgramadoActual);
             int tiempoInicialTramo = 0;
             int atrasoDespegue = 0;
             if (this.Estado == EstadoTramo.NoIniciado)
@@ -1082,7 +1073,7 @@ namespace SimuLAN.Clases
                             sumaAtrasos += tramoAuxPrevio.CausasAtraso[c];
                         }
                         int atrasoRealEstimado = Math.Max(sumaAtrasos, tramoAuxPrevio.TInicialRst - tramoAuxPrevio.TInicialProg);
-                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMinimo(this) - this.TInicialRst);
+                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.TurnAroundMinimoOrigen - this.TInicialRst);
                         tiempoInicialTramo += atrasoPropagado;
                     }
                 }
@@ -1110,36 +1101,53 @@ namespace SimuLAN.Clases
         /// <returns>Tiempo estimado de arrivo</returns>
         internal int TiempoFinalResultanteEstimado()
         {
-            Avion avion = this.GetAvion(this.IdAvionOperado);
+            Avion avion = this.GetAvion(this.IdAvionProgramadoActual);
             int tiempoFinalTramo = 0;
             int atrasoDespegue = 0;
             int atrasoVuelo = 0;
             if (this.Estado == EstadoTramo.NoIniciado)
             {
-                tiempoFinalTramo = this.TFinalRst;
-                foreach (TipoDisrupcion c in this.CausasAtraso.Keys)
-                {
-                    tiempoFinalTramo += this.CausasAtraso[c];
-                }
-                if (tiempoFinalTramo == this.TFinalRst)
-                { //Se recalcula atraso en función de lo ocurrido con el tramo anterior 
-                    Tramo tramoAuxPrevio = this.Tramo_Previo;
-                    if (tramoAuxPrevio != null)
-                    {
-                        int sumaAtrasos = 0;
-                        foreach (TipoDisrupcion c in tramoAuxPrevio.CausasAtraso.Keys)
-                        {
-                            sumaAtrasos += tramoAuxPrevio.CausasAtraso[c];
-                        }
-                        int atrasoRealEstimado = Math.Max(sumaAtrasos, tramoAuxPrevio.TInicialRst - tramoAuxPrevio.TInicialProg);
-                        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.GetTurnAroundMinimo(this) - this.TInicialRst);
-                        tiempoFinalTramo += atrasoPropagado;
-                    }
-                }
-                else
-                {
 
+                Tramo tramo_en_operacion = this.GetAvion(this.IdAvionProgramadoActual).Tramo_Actual;
+                tiempoFinalTramo = this.TFinalRst;
+                int atrasoPropagado = 0;
+
+                while (tramo_en_operacion != this)
+                {
+                    int sumaAtrasos = atrasoPropagado;
+                    foreach (TipoDisrupcion c in tramo_en_operacion.CausasAtraso.Keys)
+                    {
+                        sumaAtrasos += tramo_en_operacion.CausasAtraso[c];
+                    }
+                    int atrasoRealEstimado = Math.Max(sumaAtrasos, tramo_en_operacion.TInicialRst - tramo_en_operacion.TInicialProg);
+                    atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramo_en_operacion.TFinalProg + tramo_en_operacion.TurnAroundMinimoDestino - tramo_en_operacion.Tramo_Siguiente.TInicialRst);
+                    tramo_en_operacion = tramo_en_operacion.Tramo_Siguiente;
                 }
+                tiempoFinalTramo += atrasoPropagado;
+
+                //foreach (TipoDisrupcion c in this.CausasAtraso.Keys)
+                //{
+                //    tiempoFinalTramo += this.CausasAtraso[c];
+                //}
+                //if (tiempoFinalTramo == this.TFinalRst)
+                //{ //Se recalcula atraso en función de lo ocurrido con el tramo anterior 
+                //    Tramo tramoAuxPrevio = this.Tramo_Previo;
+                //    if (tramoAuxPrevio != null)
+                //    {
+                //        int sumaAtrasos = 0;
+                //        foreach (TipoDisrupcion c in tramoAuxPrevio.CausasAtraso.Keys)
+                //        {
+                //            sumaAtrasos += tramoAuxPrevio.CausasAtraso[c];
+                //        }
+                //        int atrasoRealEstimado = Math.Max(sumaAtrasos, tramoAuxPrevio.TInicialRst - tramoAuxPrevio.TInicialProg);
+                //        int atrasoPropagado = Math.Max(0, atrasoRealEstimado + tramoAuxPrevio.TFinalProg + this.TurnAroundMinimoOrigen - this.TInicialRst);
+                //        tiempoFinalTramo += atrasoPropagado;
+                //    }
+                //}
+                //else
+                //{
+
+                //}
             }
             else if (this.Estado == EstadoTramo.Iniciado)
             {
@@ -1267,6 +1275,14 @@ namespace SimuLAN.Clases
             return this.IdHub.ToString() + "\t" + _t_inicial_prog.ToString() + "\t-" + _t_final_prog.ToString();
         }
 
+        private int ObtenerTurnAround()
+        {
+            if (_turn_around_minimo == 0)
+            {
+                _turn_around_minimo = GetTurnAroundMinimo(this);
+            }
+            return _turn_around_minimo;
+        }
         #endregion
         
         #region IComparable Members
@@ -1301,10 +1317,7 @@ namespace SimuLAN.Clases
         /// <returns>Tramo clonado</returns>
         public object Clone()
         {
-            Tramo t = new Tramo();
-            t._espera_tramo_por_conexion_pairing = this._espera_tramo_por_conexion_pairing;
-            t._espera_tramo_por_conexion_pasajeros = this._espera_tramo_por_conexion_pasajeros;
-            t._inicia_conexion_pairing = this._inicia_conexion_pairing;
+            Tramo t = new Tramo();            
             t.TramoBase = (TramoBase)this.TramoBase.Clone();
             t._causas_atraso = new Dictionary<TipoDisrupcion, int>();
             t._date_time_fin_prog = this._date_time_fin_prog;

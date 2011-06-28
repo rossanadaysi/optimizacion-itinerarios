@@ -20,42 +20,67 @@ namespace SimuLAN.Clases.Optimizacion
         private InfoTramoParaOptimizacion _tramo_previo;
         private InfoTramoParaOptimizacion _tramo_siguiente;
         private Tramo _tramo_original;
-        private List<InfoTramoParaOptimizacion> _info_tramos_posteriores_conectados;
-        private List<InfoTramoParaOptimizacion> _info_tramos_anteriores_conectados;
+        private List<InfoConexionParaOptimizacion> _info_tramos_posteriores_conectados_pairings;
+        private List<InfoConexionParaOptimizacion> _info_tramos_anteriores_conectados_pairings;
+        private List<InfoConexionParaOptimizacion> _info_tramos_posteriores_conectados_pasajeros;
+        private List<InfoConexionParaOptimizacion> _info_tramos_anteriores_conectados_pasajeros;
         private BuscarTramosConectadosEventHandler _buscar_tramos;
 
         #endregion
 
         #region Propiedades
-        public List<InfoTramoParaOptimizacion> InfoTramosPosterioresConectados
+
+        public List<InfoConexionParaOptimizacion> InfoTramosPosterioresConectadosPairings
         {
             get
             {
-                if (_info_tramos_posteriores_conectados == null)
+                if (_info_tramos_posteriores_conectados_pairings == null)
                 {
-                    _info_tramos_posteriores_conectados = _buscar_tramos(_tramo_original.TodasLasConexionesPosteriores, true);
+                    _info_tramos_posteriores_conectados_pairings = _buscar_tramos(_tramo_original.ConexionesPairingPosteriores, true);
                     if (this._tramo_siguiente != null)
                     {
-                        _info_tramos_posteriores_conectados.Add(this._tramo_siguiente);
+                        _info_tramos_posteriores_conectados_pairings.Add(new InfoConexionParaOptimizacion(this._tramo_siguiente, null));
                     }
                 }
-                return _info_tramos_posteriores_conectados;
+                return _info_tramos_posteriores_conectados_pairings;
+            }
+        }
+        public List<InfoConexionParaOptimizacion> InfoTramosAnterioresConectadosPairings
+        {
+            get
+            {
+                if (_info_tramos_anteriores_conectados_pairings == null)
+                {
+                    _info_tramos_anteriores_conectados_pairings = _buscar_tramos(_tramo_original.ConexionesPairingAnteriores, false);
+                    if (this._tramo_previo != null)
+                    {
+                        _info_tramos_anteriores_conectados_pairings.Add(new InfoConexionParaOptimizacion(this._tramo_previo, null));
+                    }
+                }
+                return _info_tramos_anteriores_conectados_pairings;
             }
 
         }
-        public List<InfoTramoParaOptimizacion> InfoTramosAnterioresConectados
+        public List<InfoConexionParaOptimizacion> InfoTramosPosterioresConectadosPasajeros
         {
             get
             {
-                if (_info_tramos_anteriores_conectados == null)
+                if (_info_tramos_posteriores_conectados_pasajeros == null)
                 {
-                    _info_tramos_anteriores_conectados = _buscar_tramos(_tramo_original.TodasLasConexionesAnteriores, false);
-                    if (this._tramo_previo != null)
-                    {
-                        _info_tramos_anteriores_conectados.Add(this._tramo_previo);
-                    }
+                    _info_tramos_posteriores_conectados_pasajeros = _buscar_tramos(_tramo_original.ConexionesPaxPosteriores, true);
                 }
-                return _info_tramos_anteriores_conectados;
+                return _info_tramos_posteriores_conectados_pasajeros;
+            }
+        }
+        public List<InfoConexionParaOptimizacion> InfoTramosAnterioresConectadosPasajeros
+        {
+            get
+            {
+                if (_info_tramos_anteriores_conectados_pasajeros == null)
+                {
+                    _info_tramos_anteriores_conectados_pasajeros = _buscar_tramos(_tramo_original.ConexionesPaxAnteriores, false);
+                }
+                return _info_tramos_anteriores_conectados_pasajeros;
             }
 
         }
@@ -169,11 +194,18 @@ namespace SimuLAN.Clases.Optimizacion
             get
             {
                 Dictionary<int, int> variaciones = new Dictionary<int, int>();
-                foreach (InfoTramoParaOptimizacion info_tramo in InfoTramosAnterioresConectados)
+                foreach (InfoConexionParaOptimizacion info_tramo_conexion in InfoTramosAnterioresConectadosPairings)
                 {
-                    if (!variaciones.ContainsKey(info_tramo.IdTramo))
+                    if (!variaciones.ContainsKey(info_tramo_conexion._info_tramo.IdTramo))
                     {
-                        variaciones.Add(info_tramo.IdTramo, info_tramo.VariacionAplicada);
+                        variaciones.Add(info_tramo_conexion._info_tramo.IdTramo, info_tramo_conexion._info_tramo.VariacionAplicada);
+                    }
+                }
+                foreach (InfoConexionParaOptimizacion info_tramo_conexion in InfoTramosAnterioresConectadosPasajeros)
+                {
+                    if (!variaciones.ContainsKey(info_tramo_conexion._info_tramo.IdTramo))
+                    {
+                        variaciones.Add(info_tramo_conexion._info_tramo.IdTramo, info_tramo_conexion._info_tramo.VariacionAplicada);
                     }
                 }
                 return variaciones;
@@ -184,9 +216,13 @@ namespace SimuLAN.Clases.Optimizacion
             get
             {
                 Dictionary<int, int> variaciones = new Dictionary<int, int>();
-                foreach (InfoTramoParaOptimizacion info_tramo in InfoTramosPosterioresConectados)
+                foreach (InfoConexionParaOptimizacion info_tramo_conexion in InfoTramosPosterioresConectadosPairings)
                 {
-                    variaciones.Add(info_tramo.IdTramo, info_tramo.VariacionAplicada);
+                    variaciones.Add(info_tramo_conexion._info_tramo.IdTramo, info_tramo_conexion._info_tramo.VariacionAplicada);
+                }
+                foreach (InfoConexionParaOptimizacion info_tramo_conexion in InfoTramosPosterioresConectadosPasajeros)
+                {
+                    variaciones.Add(info_tramo_conexion._info_tramo.IdTramo, info_tramo_conexion._info_tramo.VariacionAplicada);
                 }
                 return variaciones;
             }
@@ -310,11 +346,32 @@ namespace SimuLAN.Clases.Optimizacion
             actual.VariacionAplicada = variacion_tramo_inicial;
             if (profundidad_evaluacion > 0)
             {
-                List<InfoTramoParaOptimizacion> tramos_con_conexiones = this.InfoTramosPosterioresConectados;
-                foreach (InfoTramoParaOptimizacion tramo in tramos_con_conexiones)
+                List<InfoConexionParaOptimizacion> tramos_con_conexiones_pairings = this.InfoTramosPosterioresConectadosPairings;
+                List<InfoConexionParaOptimizacion> tramos_con_conexiones_pasajeros = this.InfoTramosPosterioresConectadosPasajeros;
+                foreach (InfoConexionParaOptimizacion tramo_conectado in tramos_con_conexiones_pairings)
                 {
-                    double atraso_propagado_rama = tramo.EstimarAtrasoArbolPropagacion(atraso_inicial, tramo.VariacionAplicada, profundidad_evaluacion - 1);
+                    double atraso_propagado_rama = tramo_conectado._info_tramo.EstimarAtrasoArbolPropagacion(atraso_inicial, tramo_conectado._info_tramo.VariacionAplicada, profundidad_evaluacion - 1);
                     atraso_propagado_arbol += atraso_propagado_rama;
+                }
+                foreach (InfoConexionParaOptimizacion tramo_conectado in tramos_con_conexiones_pasajeros)
+                {                    
+                    int minutos_proximo_vuelo = tramo_conectado._info_tramo.TramoOriginal.GetMinutosProximoVuelo(tramo_conectado._info_tramo.TramoOriginal);
+                    string estacion_actual = tramo_conectado._info_tramo.TramoOriginal.TramoBase.Origen;
+                    string matricula_actual = tramo_conectado._info_tramo.TramoOriginal.TramoBase.Numero_Ac;
+                    Avion avion_actual = tramo_conectado._info_tramo.TramoOriginal.GetAvion(matricula_actual);
+                    int turn_around_conexion_pax = avion_actual.GetAeropuerto(estacion_actual).Minutos_Conexion_Pax;                    
+                    int tiempo_programado_despegue_tramo_conexion = tramo_conectado._info_tramo.TramoOriginal.TInicialProg;
+                    int max_minutos_espera_aceptados = tramo_conectado._conexion.GetEspera(minutos_proximo_vuelo);                    
+                    Tramo tramo_previo_conex = this.TramoOriginal;
+                    double atraso_propagado = atraso_inicial;
+                    double atrasoEsperado = Math.Max(0, tramo_previo_conex.TFinalProg + atraso_inicial + turn_around_conexion_pax - tiempo_programado_despegue_tramo_conexion);
+                    bool pierde_conexion = atrasoEsperado > max_minutos_espera_aceptados;
+
+                    if (!pierde_conexion && atrasoEsperado > 0) //Propaga atraso
+                    {
+                        double atraso_propagado_rama = tramo_conectado._info_tramo.EstimarAtrasoArbolPropagacion(atrasoEsperado, tramo_conectado._info_tramo.VariacionAplicada, profundidad_evaluacion - 1);
+                        atraso_propagado_arbol += atraso_propagado_rama;
+                    }
                 }
             }
             actual.VariacionAplicada = variacion_original;

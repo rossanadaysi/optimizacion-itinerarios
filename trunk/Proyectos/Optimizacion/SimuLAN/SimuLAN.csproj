@@ -91,6 +91,7 @@
     <Compile Include="Clases\Optimizacion\ComparadorIteraciones.cs" />
     <Compile Include="Clases\Optimizacion\Curva.cs" />
     <Compile Include="Clases\Optimizacion\ExplicacionImpuntualidad.cs" />
+    <Compile Include="Clases\Optimizacion\InfoConexionParaOptimizacion.cs" />
     <Compile Include="Clases\Optimizacion\InfoTramoParaOptimizacion.cs" />
     <Compile Include="Clases\Optimizacion\LogOptimizacion.cs" />
     <Compile Include="Clases\Optimizacion\Optimizador.cs" />

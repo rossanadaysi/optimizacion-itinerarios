@@ -1093,8 +1093,8 @@ namespace SimuLAN.Clases
                                 if ((tramo_ini.TFinalProg + ConexionPairing.TIEMPO_CAMBIO_AVION <= tramo_fin.TInicialProg)
                                   && (tramo_ini.TFinalProg + ConexionPairing.TIEMPO_MAXIMO_PAIRING > tramo_fin.TInicialProg))
                                 {
-                                    tramo_ini.IniciaConexionPairing = true;
-                                    tramo_fin.EsperaTramoPorConexionPairing = true;
+                                    //tramo_ini.IniciaConexionPairing = true;
+                                    //tramo_fin.EsperaTramoPorConexionPairing = true;
                                     retorno.Add(conexion_encontrada);
                                 }
                                 else
@@ -1131,7 +1131,7 @@ namespace SimuLAN.Clases
                         && VerificaContinuidadEntreTramos(tramo_ini, tramo_fin, conexion.Tipo, hubs))
                     {
                         ConexionLegs con_encontrada = new ConexionLegs(tramo_ini, tramo_fin, conexion);
-                        tramo_fin.EsperaTramoPorConexionPasajeros = true;
+                        //tramo_fin.EsperaTramoPorConexionPasajeros = true;
                         con_encontrada.PasajerosConectados = Distribuciones.GenerarAleatorio(conexion.Rdm, DistribucionesEnum.Normal, 1, conexion.Paxs_Promedio, conexion.Pax_Desvest, 0, int.MaxValue);
                         retorno.Add(con_encontrada);
                         break;

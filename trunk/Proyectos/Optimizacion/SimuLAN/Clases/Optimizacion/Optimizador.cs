@@ -158,6 +158,7 @@ namespace SimuLAN.Clases.Optimizacion
             this._tramos_optimizacion.CargarImpuntualidadesBase(impuntualidades_base);
             int iteraciones = 1;
             _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Inicio, impuntualidades_base);
+            _log_info_optimizacion.AgregarInfoRecovery(iteraciones, FaseOptimizacion.Inicio, manager.GetSwaps(replicasBase));
 
             while (iteraciones < total_iteraciones)
             {
@@ -176,6 +177,7 @@ namespace SimuLAN.Clases.Optimizacion
                 iteraciones++;
                 _log_info_optimizacion.AgregarInfoVariaciones(iteraciones, FaseOptimizacion.Optimizacion, variaciones_1);
                 _log_info_optimizacion.AgregarInfoImpuntualidad(iteraciones, FaseOptimizacion.Optimizacion, impuntualidades_sim_1);
+                _log_info_optimizacion.AgregarInfoRecovery(iteraciones, FaseOptimizacion.Optimizacion, manager.GetSwaps(replicas_sim_1));
                 _tiempo_optimizacion = _tiempo_optimizacion.Add(DateTime.Now - _marcador);
                 _marcador = DateTime.Now;
             }
@@ -186,7 +188,8 @@ namespace SimuLAN.Clases.Optimizacion
         {
             if (_log_info_optimizacion != null)
             {
-                _log_info_optimizacion.ImprimirDetalles(path + @"\Optimizacion\Detalles" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
+                _log_info_optimizacion.ImprimirDetallesPuntualidad(path + @"\Optimizacion\Detalles" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
+                _log_info_optimizacion.ImprimirDetallesRecovery(path + @"\Optimizacion\DetallesRecovery" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls");
                 _log_info_optimizacion.ImprimirResumenIteraciones(path + @"\Optimizacion\Iteraciones" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds);
                 _log_info_optimizacion.ImprimirOptimo(path + @"\Optimizacion\Optimo" + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".xls", GetDominio(), _stds, this.ItinerarioBase, MinutosSimulacion, MinutosOptimizacion);            
             }

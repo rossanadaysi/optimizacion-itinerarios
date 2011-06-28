@@ -4,7 +4,7 @@ using SimuLAN.Utils;
 
 namespace SimuLAN.Clases.Optimizacion
 {
-    public delegate List<InfoTramoParaOptimizacion> BuscarTramosConectadosEventHandler(SerializableList<ConexionLegs> conexiones_posteriores, bool busca_conexiones_posteriores);
+    public delegate List<InfoConexionParaOptimizacion> BuscarTramosConectadosEventHandler(SerializableList<ConexionLegs> conexiones_posteriores, bool busca_conexiones_posteriores);
 
     public class OrganizadorTramos
     {
@@ -30,9 +30,9 @@ namespace SimuLAN.Clases.Optimizacion
             CargarTramos();
         }
 
-        public List<InfoTramoParaOptimizacion> BuscarTramos(SerializableList<ConexionLegs> conexiones, bool busca_conexiones_posteriores)
+        public List<InfoConexionParaOptimizacion> BuscarTramos(SerializableList<ConexionLegs> conexiones, bool busca_conexiones_posteriores)
         {
-            List<InfoTramoParaOptimizacion> tramos_encontrados = new List<InfoTramoParaOptimizacion>();
+            List<InfoConexionParaOptimizacion> tramos_encontrados = new List<InfoConexionParaOptimizacion>();
             if (conexiones != null && conexiones.Count > 0)
             {
                 foreach (ConexionLegs conexion in conexiones)
@@ -54,7 +54,7 @@ namespace SimuLAN.Clases.Optimizacion
                         {
                             if (tramo_siguiente.TramoBase.Numero_Global == info_tramo.TramoOriginal.TramoBase.Numero_Global)
                             {
-                                tramos_encontrados.Add(info_tramo);
+                                tramos_encontrados.Add(new InfoConexionParaOptimizacion(info_tramo, conexion));
                                 tramo_encontrado = true;
                                 continue;
                             }
@@ -321,97 +321,101 @@ namespace SimuLAN.Clases.Optimizacion
         internal void OptimizarCurvasAtrasoPropagado(int salto_variaciones)
         {
             double ganancia_total = 0;
-            List<string> lista_priorizada_aviones = PriorizarListaAviones(TipoPriorizacion.Random);
-            foreach (string avion in lista_priorizada_aviones)
+            List<string> lista_priorizada_aviones = PriorizarListaAviones(TipoPriorizacion.Atraso);
+            int cantidad_reprocesos_internos = 2;
+            while (cantidad_reprocesos_internos > 0)
             {
-                Dictionary<int, bool> infoTramoOptimizado = new Dictionary<int, bool>();
-                int contador = 0;
-                foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
+                cantidad_reprocesos_internos--;
+
+                foreach (string avion in lista_priorizada_aviones)
                 {
-                    infoTramoOptimizado.Add(contador, !infoTramo.Optimizable(0));
-                    contador++;
-                }
-                int cantidad_tramos_optimizados = 0;
-                while (cantidad_tramos_optimizados < this.TramosPorAvion[avion].Count)
-                {
-                    Dictionary<int, double> infoTramoDisminucionAtraso = new Dictionary<int, double>();
-                    Dictionary<int, double> infoTramoVariacionPropuesta = new Dictionary<int, double>();
-                    int index = 0;
+                    Dictionary<int, bool> infoTramoOptimizado = new Dictionary<int, bool>();
+                    int contador = 0;
                     foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
                     {
-                        if (!infoTramoOptimizado[index])
-                        {
-                            //Obtener rangos posibles de variación de la curva
-                            int minimaVariacionDelante = ObtenerMinimaVariacionDelanteTramo(infoTramo);
-                            int minimaVariacionAtras = ObtenerMinimaVariacionAtrasTramo(infoTramo);
-                            int rangoMenos = Math.Min(infoTramo.VariacionMenosMaximaComercial, minimaVariacionAtras);
-                            rangoMenos = rangoMenos - rangoMenos % salto_variaciones;
-                            int rangoMas = Math.Min(infoTramo.VariacionMasMaximaComercial, minimaVariacionDelante);
-                            rangoMas = rangoMas - rangoMas % salto_variaciones;
-                            if (rangoMas<0 || rangoMenos < 0)
-                            {
-
-                            }
-                            if (rangoMas > 0 || rangoMenos > 0)
-                            {
-                                Dictionary<double, double> curva_atrasos_propagados_globales = new Dictionary<double, double>();
-                                for (int i = -rangoMenos; i <= rangoMas; i = i + salto_variaciones)
-                                {
-                                    double atraso_previo = infoTramo.AtrasoTramoPrevio;
-                                    double atraso_propagado = infoTramo.EstimarAtrasoArbolPropagacion(atraso_previo, i, 10);
-                                    curva_atrasos_propagados_globales.Add(i, atraso_propagado);
-                                }
-                                Curva c = new Curva(curva_atrasos_propagados_globales, -rangoMenos, rangoMas, salto_variaciones);
-                                infoTramoDisminucionAtraso.Add(index, c.DiferenciaValorOptimoConValorEnCero);
-                                infoTramoVariacionPropuesta.Add(index, c.PuntoOptimo);
-                                if (c.PuntoMasCercanoCero != 0 && c.DiferenciaValorOptimoConValorEnCero <= 0)
-                                {
-                                    infoTramo.VariacionAplicada = Convert.ToInt32(c.PuntoMasCercanoCero);
-                                    infoTramoOptimizado[index] = true;
-                                }
-                            }
-                            else
-                            {
-                                infoTramoDisminucionAtraso.Add(index, 0);
-                                infoTramoVariacionPropuesta.Add(index, 0);
-                            }
-                        }
-                        index++;
+                        infoTramoOptimizado.Add(contador, !infoTramo.Optimizable(0));
+                        contador++;
                     }
-                    int index_optimo = 0;
-                    double ganancia_maxima = double.MinValue;
-                    foreach (int index_tramo in infoTramoVariacionPropuesta.Keys)
+                    int cantidad_tramos_optimizados = 0;
+                    while (cantidad_tramos_optimizados < this.TramosPorAvion[avion].Count)
                     {
-                        if (infoTramoDisminucionAtraso[index_tramo] > ganancia_maxima)
+                        Dictionary<int, double> infoTramoDisminucionAtraso = new Dictionary<int, double>();
+                        Dictionary<int, double> infoTramoVariacionPropuesta = new Dictionary<int, double>();
+                        int index = 0;
+                        foreach (InfoTramoParaOptimizacion infoTramo in this.TramosPorAvion[avion])
                         {
-                            index_optimo = index_tramo;
-                            ganancia_maxima =infoTramoDisminucionAtraso[index_tramo];
-                        }
-                    }
-                    if (ganancia_maxima > 0)
-                    {
-                        int variacion_aplicada_final = Convert.ToInt32(infoTramoVariacionPropuesta[index_optimo]);
-                        this.TramosPorAvion[avion][index_optimo].VariacionAplicada = variacion_aplicada_final;
-                        ganancia_total += ganancia_maxima;
-                        infoTramoOptimizado[index_optimo] = true;
-                        cantidad_tramos_optimizados = 0;
-                        foreach (int i in infoTramoOptimizado.Keys)
-                        {
-                            if (infoTramoOptimizado[i])
+                            if (!infoTramoOptimizado[index])
                             {
-                                cantidad_tramos_optimizados++;
+                                //Obtener rangos posibles de variación de la curva
+                                int minimaVariacionDelante = ObtenerMinimaVariacionDelanteTramo(infoTramo);
+                                int minimaVariacionAtras = ObtenerMinimaVariacionAtrasTramo(infoTramo);
+                                int rangoMenos = Math.Min(infoTramo.VariacionMenosMaximaComercial, minimaVariacionAtras);
+                                rangoMenos = rangoMenos - rangoMenos % salto_variaciones;
+                                int rangoMas = Math.Min(infoTramo.VariacionMasMaximaComercial, minimaVariacionDelante);
+                                rangoMas = rangoMas - rangoMas % salto_variaciones;
+                                if (rangoMas < 0 || rangoMenos < 0)
+                                {
+
+                                }
+                                if (rangoMas > 0 || rangoMenos > 0)
+                                {
+                                    Dictionary<double, double> curva_atrasos_propagados_globales = new Dictionary<double, double>();
+                                    for (int i = -rangoMenos; i <= rangoMas; i = i + salto_variaciones)
+                                    {
+                                        double atraso_previo = infoTramo.AtrasoTramoPrevio;
+                                        double atraso_propagado = infoTramo.EstimarAtrasoArbolPropagacion(atraso_previo, i, 10);
+                                        curva_atrasos_propagados_globales.Add(i, atraso_propagado);
+                                    }
+                                    Curva c = new Curva(curva_atrasos_propagados_globales, -rangoMenos, rangoMas, salto_variaciones);
+                                    infoTramoDisminucionAtraso.Add(index, c.DiferenciaValorOptimoConValorEnCero);
+                                    infoTramoVariacionPropuesta.Add(index, c.PuntoOptimo);
+                                    if (c.PuntoMasCercanoCero != 0 && c.DiferenciaValorOptimoConValorEnCero <= 0)
+                                    {
+                                        infoTramo.VariacionAplicada = Convert.ToInt32(c.PuntoMasCercanoCero);
+                                        infoTramoOptimizado[index] = true;
+                                    }
+                                }
+                                else
+                                {
+                                    infoTramoDisminucionAtraso.Add(index, 0);
+                                    infoTramoVariacionPropuesta.Add(index, 0);
+                                }
+                            }
+                            index++;
+                        }
+                        int index_optimo = 0;
+                        double ganancia_maxima = double.MinValue;
+                        foreach (int index_tramo in infoTramoVariacionPropuesta.Keys)
+                        {
+                            if (infoTramoDisminucionAtraso[index_tramo] > ganancia_maxima)
+                            {
+                                index_optimo = index_tramo;
+                                ganancia_maxima = infoTramoDisminucionAtraso[index_tramo];
                             }
                         }
+                        if (ganancia_maxima > 0)
+                        {
+                            int variacion_aplicada_final = Convert.ToInt32(infoTramoVariacionPropuesta[index_optimo]);
+                            this.TramosPorAvion[avion][index_optimo].VariacionAplicada = variacion_aplicada_final;
+                            ganancia_total += ganancia_maxima;
+                            infoTramoOptimizado[index_optimo] = true;
+                            cantidad_tramos_optimizados = 0;
+                            foreach (int i in infoTramoOptimizado.Keys)
+                            {
+                                if (infoTramoOptimizado[i])
+                                {
+                                    cantidad_tramos_optimizados++;
+                                }
+                            }
 
+                        }
+                        else
+                        {
+                            cantidad_tramos_optimizados = this.TramosPorAvion[avion].Count;
+                        }
                     }
-                    else
-                    {                        
-                        cantidad_tramos_optimizados = this.TramosPorAvion[avion].Count;
-                    }                  
-                 }
+                }
             }
-
-
         }
 
         private List<string> PriorizarListaAviones(TipoPriorizacion tipoPriorizacion)
@@ -454,11 +458,12 @@ namespace SimuLAN.Clases.Optimizacion
                 foreach (string avion in lista_aviones)
                 {
                     double atraso = 0;
+                    int tramos = _tramos_por_avion[avion].Count;
                     foreach (InfoTramoParaOptimizacion tramo in _tramos_por_avion[avion])
                     {
-                        atraso += tramo.ExplicacionImpuntualidadActual.AtrasoTotal;
+                        atraso += tramo.ExplicacionImpuntualidadActual.AtrasoReaccionarios;
                     }
-                    atraso_por_avion.Add(new KeyValuePair<string, double>(avion, atraso));
+                    atraso_por_avion.Add(new KeyValuePair<string, double>(avion, atraso / Math.Max(1, tramos)));
                 }
                 atraso_por_avion.Sort(new Comparison<KeyValuePair<string, double>>(CompararAtrasoEntreAviones));
                 foreach (KeyValuePair<string, double> kv in atraso_por_avion)

@@ -619,7 +619,7 @@ namespace SimuLAN.Clases
             //3). El tramo no debe estar conectado con pairing
             //4). El slot previo al tramo no debe contener un backup
             //Esto significa que se podría recuperar al menos un minuto posteriormente.
-            int turnAround = receptor_tramo_inicial.GetTurnAroundMinimo(receptor_tramo_inicial);
+            int turnAround = receptor_tramo_inicial.TurnAroundMinimoOrigen;
             while (!(receptor_tramo_inicial.Tramo_Previo.TFinalRst + turnAround < tiempo_limite
                 && receptor_tramo_inicial.TInicialRst > tiempo_limite
                 && receptor_tramo_inicial.Estado == EstadoTramo.NoIniciado
@@ -637,8 +637,10 @@ namespace SimuLAN.Clases
                     receptor_tramo_inicial = receptor_tramo_inicial.Tramo_Siguiente;
                     //Cuando se acaban los tramo o se encuentra con un mantto programado, se retorna null
                     if (receptor_tramo_inicial == null || receptor_tramo_inicial.Tramo_Previo.MantenimientoPosterior != null)
+                    {
                         return null;
-                    turnAround = receptor_tramo_inicial.GetTurnAroundMinimo(receptor_tramo_inicial);
+                    }
+                    turnAround = receptor_tramo_inicial.TurnAroundMinimoOrigen;
                 }
             }
             return receptor_tramo_inicial;
@@ -951,7 +953,7 @@ namespace SimuLAN.Clases
                 {
                     if (tramoAux.MantenimientoPosterior == null)
                     {
-                        int minutosLibres = tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.Tramo_Siguiente.TFinRstTramoPrevio - tramoAux.Tramo_Siguiente.GetTurnAroundMinimo(tramoAux.Tramo_Siguiente);
+                        int minutosLibres = tramoAux.Tramo_Siguiente.TInicialRst - tramoAux.Tramo_Siguiente.TFinRstTramoPrevio - tramoAux.TurnAroundMinimoDestino;
                         //Adelanto o recupero minutos
                         if (minutosLibres >= 0)
                         {

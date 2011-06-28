@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using SimuLAN.Clases.Recovery;
 
 namespace SimuLAN.Clases.Optimizacion
 {
@@ -12,6 +13,8 @@ namespace SimuLAN.Clases.Optimizacion
         private Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>>> _historial_impuntualidades;
 
         private Dictionary<FaseOptimizacion,Dictionary<int,Dictionary<int,int>>> _historial_variaciones_tramos;
+
+        private Dictionary<FaseOptimizacion,Dictionary<int,Dictionary<int,List<Swap>>>> _historial_recovery;
 
         private ResumenIteracion _iteracion_optima;
 
@@ -99,6 +102,7 @@ namespace SimuLAN.Clases.Optimizacion
         {
             this._historial_impuntualidades = new Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, ExplicacionImpuntualidad>>>();
             this._historial_variaciones_tramos = new Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, int>>>();
+            this._historial_recovery = new Dictionary<FaseOptimizacion, Dictionary<int, Dictionary<int, List<Swap>>>>();
         }
 
         public void AgregarInfoImpuntualidad(int iteracion, FaseOptimizacion fase, Dictionary<int, ExplicacionImpuntualidad> impuntualidades)
@@ -118,7 +122,14 @@ namespace SimuLAN.Clases.Optimizacion
             }
             _historial_variaciones_tramos[fase].Add(iteracion, variaciones);
         }
-
+        public void AgregarInfoRecovery(int iteracion,FaseOptimizacion fase, Dictionary<int, List<Swap>> swaps)
+        {
+            if (!_historial_recovery.ContainsKey(fase))
+            {
+                _historial_recovery.Add(fase, new Dictionary<int, Dictionary<int, List<Swap>>>());
+            }
+            _historial_recovery[fase].Add(iteracion, swaps);
+        }
         internal void ObtenerIteracionOptima(CriterioOptimizacion criterioOptimizacion, int _std_objetivo)
         {
             if (criterioOptimizacion == CriterioOptimizacion.EstandarPuntualidad)
@@ -155,7 +166,7 @@ namespace SimuLAN.Clases.Optimizacion
             }
         }
 
-        internal void ImprimirDetalles(string path)
+        internal void ImprimirDetallesPuntualidad(string path)
         {
             FileStream fs = new FileStream(path, FileMode.Create);
             StreamWriter sw = new StreamWriter(fs);
@@ -260,6 +271,55 @@ namespace SimuLAN.Clases.Optimizacion
             sw.WriteLine("Ajustes\t" + Ajustes.ToString());
             sw.WriteLine(IteracionOptima.ImprimirResumenVertical(dominio, stds));
             sw.WriteLine(MejorasDeOptimo.EscribirResumenVertical(stds));            
+            sw.Close();
+            fs.Close();
+        }
+
+        internal void ImprimirDetallesRecovery(string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Create);
+            StreamWriter sw = new StreamWriter(fs);
+            StringBuilder sb = new StringBuilder();
+            string tab = "\t";
+            sb.Append("Fase");
+            sb.Append("\tIteracion");
+            sb.Append("\tRéplica");
+            sb.Append("\tId_swap");
+            sb.Append("\tFechaIni");
+            sb.Append("\tId_Avion_Emisor");
+            sb.Append("\tId_Avion_Receptor");
+            sb.Append("\tId_Tramo_ini_1");
+            sb.Append("\tId_Tramo_ini_2");
+            sb.Append("\tId-Tramo_fin_1");
+            sb.Append("\tId_Tramo_fin_2");
+            sb.Append("\tPunto Rotación");
+            sb.Append("\tNum_Legs_Emisor");
+            sb.Append("\tNum_Legs_Receptor");
+            sb.Append("\tRC_Ini");
+            sb.Append("\tMnts_Atraso--");
+            sb.Append("\tMnts_Atraso++");
+            sb.Append("\tMnts_Ganancia_Neta");
+            sb.Append("\tNum_Legs_Beneficiadas");
+            sb.Append("\tNum_Legs_Perjudicadas");
+            sw.WriteLine(sb.ToString());
+            foreach (FaseOptimizacion fase in _historial_recovery.Keys)
+            {
+                foreach (int iteracion in _historial_recovery[fase].Keys)
+                {
+                    foreach (int replica in _historial_recovery[fase][iteracion].Keys)
+                    {
+                        foreach (Swap swap in _historial_recovery[fase][iteracion][replica])
+                        {
+                            sb = new StringBuilder();
+                            sb.Append(fase);
+                            sb.Append(tab + iteracion);
+                            sb.Append(tab + replica);
+                            sb.Append(tab + swap.InfoParaReporte());                            
+                            sw.WriteLine(sb.ToString());
+                        }                        
+                    }
+                }
+            }
             sw.Close();
             fs.Close();
         }

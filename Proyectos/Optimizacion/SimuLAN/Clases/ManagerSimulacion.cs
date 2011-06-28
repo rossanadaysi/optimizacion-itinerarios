@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using SimuLAN.Clases;
 using SimuLAN.Clases.Disrupciones;
+using SimuLAN.Clases.Recovery;
 
 namespace SimuLAN.Clases
 {
@@ -251,6 +252,18 @@ namespace SimuLAN.Clases
         }
 
         #endregion
-        
+
+
+        internal Dictionary<int,List<Swap>> GetSwaps(List<Simulacion> replicas)
+        {
+            Dictionary<int, List<Swap>> swaps = new Dictionary<int, List<Swap>>();
+            int contador =1;
+            foreach (Simulacion replica in replicas)
+            {
+                swaps.Add(contador, replica.Swaps);
+                contador++;
+            }
+            return swaps;
+        }
     }
 }

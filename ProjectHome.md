@@ -1,0 +1,2 @@
+Proyecto computacional de optimización basado en simulación para itinerarios de transporte aéreo.
+El objetivo es encontrar una heurística que mejore la puntualidad de un itinerario, tomando como benchmark un set de réplicas de simulación estocástica basada la generación de disrupciones.
